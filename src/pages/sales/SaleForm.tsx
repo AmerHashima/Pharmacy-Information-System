@@ -1,19 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  Search,
-  Trash2,
-  Plus,
-  Minus,
-  ShoppingCart,
-  CheckCircle2,
-  Package,
-  Calculator,
-} from "lucide-react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import { productService } from "@/api/productService";
 import { branchService } from "@/api/branchService";
 import { stakeholderService } from "@/api/stakeholderService";
@@ -30,6 +17,11 @@ import {
   FilterRequest,
 } from "@/types";
 
+import SaleGeneralInfo from "./form-components/SaleGeneralInfo";
+import ProductSearch from "./form-components/ProductSearch";
+import CartItemTable from "./form-components/CartItemTable";
+import OrderSummary from "./form-components/OrderSummary";
+
 interface CartItem {
   product: ProductDto;
   quantity: number;
@@ -38,7 +30,6 @@ interface CartItem {
 
 export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const { t } = useTranslation("sales");
-  const tc = useTranslation("common").t;
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [branches, setBranches] = useState<BranchDto[]>([]);
@@ -61,7 +52,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     const fetchInitialData = async () => {
       setIsDataLoading(true);
       try {
-        // Fetch Branches (Paginated)
         const bRes = await branchService.query({
           request: {
             filters: [],
@@ -71,7 +61,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
         });
         setBranches(bRes.data.data?.data || []);
 
-        // Fetch Customers (Paginated)
         const cRes = await stakeholderService.query({
           request: {
             filters: [
@@ -85,10 +74,8 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
             pagination: { pageNumber: 1, pageSize: 50 },
           },
         });
-        const rawCustomers = cRes.data.data?.data || [];
-        setCustomers(rawCustomers);
+        setCustomers(cRes.data.data?.data || []);
 
-        // Fetch Payment Methods (Lookups - usually small, but still via service)
         const lRes = await lookupService.getByCode("PAYMENT_METHOD");
         setPaymentMethods(lRes.data.data?.lookupDetails || []);
       } catch (err) {
@@ -129,8 +116,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
 
     return () => clearTimeout(timer);
   }, [search]);
-
-  const filteredProducts = products;
 
   // Debounced Branch Search
   const handleBranchSearch = useMemo(() => {
@@ -281,246 +266,42 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 min-h-[70vh]">
       <div className="xl:col-span-2 space-y-6 min-w-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label={t("source_branch")}
-            value={selectedBranchId}
-            onChange={(e) => setSelectedBranchId(e.target.value)}
-            onSearchChange={handleBranchSearch}
-            options={branches.map((b) => ({
-              value: b.oid,
-              label: b.branchName ?? "",
-            }))}
-          />
-          <Select
-            label={t("customer_optional")}
-            value={selectedCustomerId}
-            onChange={(e) => setSelectedCustomerId(e.target.value)}
-            onSearchChange={handleCustomerSearch}
-            options={customers.map((c) => ({
-              value: c.oid,
-              label: c.name ?? "",
-            }))}
-          />
-        </div>
+        <SaleGeneralInfo
+          selectedBranchId={selectedBranchId}
+          setSelectedBranchId={setSelectedBranchId}
+          selectedCustomerId={selectedCustomerId}
+          setSelectedCustomerId={setSelectedCustomerId}
+          branches={branches}
+          customers={customers}
+          handleBranchSearch={handleBranchSearch}
+          handleCustomerSearch={handleCustomerSearch}
+        />
 
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Search className="h-5 w-5" />
-          </div>
-          <Input
-            placeholder={t("pos_search_placeholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-14 text-lg"
-          />
+        <ProductSearch
+          search={search}
+          setSearch={setSearch}
+          isSearching={isSearching}
+          filteredProducts={products}
+          addToCart={addToCart}
+        />
 
-          {search && (
-            <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
-              {isSearching ? (
-                <div className="p-8 text-center text-gray-400">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  {t("searching")}...
-                </div>
-              ) : filteredProducts.length > 0 ? (
-                <div className="divide-y divide-gray-100">
-                  {filteredProducts.map((p) => (
-                    <button
-                      key={p.oid}
-                      onClick={() => addToCart(p)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-blue-50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-white transition-colors">
-                          <Package className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-bold text-gray-900">
-                            {p.drugName}
-                          </p>
-                          <p className="text-xs text-gray-500 font-medium">
-                            {t("gtin")}: {p.gtin} | {t("box_of")}{" "}
-                            {p.packageSize}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="font-bold text-blue-600">
-                          ${p.price?.toFixed(2)}
-                        </span>
-                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">
-                          {t("in_stock")}: {p.availableQuantity || 0}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-gray-400 font-medium">
-                  {t("no_products_found")} "{search}"
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[400px] flex flex-col">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 font-bold text-gray-700">
-              <ShoppingCart className="h-4 w-4" />
-              {t("cart_items")} ({cart.length})
-            </h3>
-            <button
-              onClick={() => setCart([])}
-              className="text-xs font-bold text-red-500 hover:text-red-600 uppercase tracking-wider"
-            >
-              {t("clear_cart")}
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto overflow-x-auto">
-            {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
-                <ShoppingCart className="h-12 w-12 opacity-20" />
-                <p className="font-medium italic">{t("cart_empty_msg")}</p>
-              </div>
-            ) : (
-              <div className="min-w-[600px] lg:min-w-0">
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-white border-b border-gray-50">
-                    <tr className="text-left text-[10px] text-gray-400 uppercase tracking-widest">
-                      <th className="px-6 py-3 font-bold">{t("product")}</th>
-                      <th className="px-6 py-3 font-bold text-center">
-                        {t("qty")}
-                      </th>
-                      <th className="px-6 py-3 font-bold text-right">
-                        {t("price")}
-                      </th>
-                      <th className="px-6 py-3 font-bold text-right">
-                        {t("subtotal")}
-                      </th>
-                      <th className="px-6 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {cart.map((item) => (
-                      <tr
-                        key={item.product.oid}
-                        className="group hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-gray-900 text-sm">
-                            {item.product.drugName}
-                          </p>
-                          <p className="text-[10px] text-gray-400">
-                            {t("unit")}: ${item.unitPrice.toFixed(2)}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() =>
-                                updateQuantity(item.product.oid, -1)
-                              }
-                              className="p-1 hover:bg-white rounded border border-gray-200"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <span className="w-8 text-center font-bold text-sm">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() =>
-                                updateQuantity(item.product.oid, 1)
-                              }
-                              className="p-1 hover:bg-white rounded border border-gray-200"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-gray-600 text-sm">
-                          ${item.unitPrice.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-gray-900 text-sm">
-                          ${(item.quantity * item.unitPrice).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => removeFromCart(item.product.oid)}
-                            className="text-gray-300 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+        <CartItemTable
+          cart={cart}
+          setCart={setCart}
+          updateQuantity={updateQuantity}
+          removeFromCart={removeFromCart}
+        />
       </div>
 
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-0 space-y-6">
-          <h3 className="font-bold text-gray-700">{t("order_summary")}</h3>
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex justify-between text-gray-500 text-sm">
-                <span>{t("subtotal")}</span>
-                <span className="font-medium">
-                  ${totals.subtotal.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-500 text-sm">
-                <span>{t("vat")} (15%)</span>
-                <span className="font-medium">${totals.tax.toFixed(2)}</span>
-              </div>
-              <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between">
-                <span className="font-bold text-gray-900">
-                  {t("total_amount")}
-                </span>
-                <span className="font-bold text-blue-600 text-2xl tracking-tighter">
-                  ${totals.total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            <div className="h-px bg-gray-100"></div>
-
-            <div className="space-y-4">
-              <Select
-                label={t("payment_method")}
-                value={selectedPaymentMethodId}
-                onChange={(e) => setSelectedPaymentMethodId(e.target.value)}
-                options={paymentMethods.map((pm) => ({
-                  value: pm.oid,
-                  label: pm.valueNameEn ?? "",
-                }))}
-              />
-
-              <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-3">
-                <Calculator className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <div className="text-xs text-blue-800">
-                  <p className="font-bold mb-1">{t("pos_calculation")}</p>
-                  <p>{t("pos_calculation_msg")}</p>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleSubmit}
-                className="w-full h-14 text-lg font-bold shadow-lg shadow-blue-200"
-                disabled={cart.length === 0 || isLoading}
-                isLoading={isLoading}
-              >
-                {t("complete_transaction")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <OrderSummary
+        totals={totals}
+        paymentMethods={paymentMethods}
+        selectedPaymentMethodId={selectedPaymentMethodId}
+        setSelectedPaymentMethodId={setSelectedPaymentMethodId}
+        handleSubmit={handleSubmit}
+        isLoading={isLoading}
+        cartLength={cart.length}
+      />
     </div>
   );
 }
