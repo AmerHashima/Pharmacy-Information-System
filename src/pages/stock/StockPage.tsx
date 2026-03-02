@@ -328,7 +328,7 @@ export default function StockPage() {
             </Button>
           </div>
 
-          <div className="overflow-visible">
+          <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
