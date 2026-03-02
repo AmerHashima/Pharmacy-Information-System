@@ -189,7 +189,7 @@ export default function StockPage() {
     }));
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 max-w-full mx-auto pb-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
         <div className="flex gap-2">
@@ -202,7 +202,7 @@ export default function StockPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="p-6">
+        <Card className="overflow-visible h-fit">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Select
               label={t("transaction_type")}
@@ -261,7 +261,7 @@ export default function StockPage() {
           </div>
         </Card>
 
-        <Card className="p-6 overflow-hidden">
+        <Card className="overflow-visible min-h-[500px]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">{t("items")}</h2>
             <Button
@@ -278,7 +278,7 @@ export default function StockPage() {
             </Button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-visible">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
@@ -315,10 +315,17 @@ export default function StockPage() {
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
                         placeholder="0.00"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E") {
+                            e.preventDefault();
+                          }
+                        }}
                         error={errors.details?.[index]?.quantity?.message}
                         {...register(`details.${index}.quantity`, {
                           valueAsNumber: true,
+                          min: 0,
                         })}
                       />
                     </td>
@@ -326,10 +333,17 @@ export default function StockPage() {
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
                         placeholder="0.00"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E") {
+                            e.preventDefault();
+                          }
+                        }}
                         error={errors.details?.[index]?.unitCost?.message}
                         {...register(`details.${index}.unitCost`, {
                           valueAsNumber: true,
+                          min: 0,
                         })}
                       />
                     </td>
