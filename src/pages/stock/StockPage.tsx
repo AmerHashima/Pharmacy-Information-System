@@ -311,8 +311,8 @@ export default function StockPage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 min-w-[250px]">{t("product")}</th>
                   <th className="px-4 py-3 min-w-[250px]">{t("qrcode")}</th>
+                  <th className="px-4 py-3 min-w-[250px]">{t("product")}</th>
                   <th className="px-4 py-3 w-32">{t("quantity")}</th>
                   <th className="px-4 py-3 w-32">{t("unit_cost")}</th>
                   <th className="px-4 py-3 w-40">{t("batch_number")}</th>
@@ -323,28 +323,6 @@ export default function StockPage() {
               <tbody className="divide-y divide-gray-200">
                 {fields.map((field, index) => (
                   <tr key={field.id} className="bg-white">
-                    <td className="px-4 py-3">
-                      <Select
-                        options={getProductOptions()}
-                        error={errors.details?.[index]?.productId?.message}
-                        {...register(`details.${index}.productId`, {
-                          onChange: (e) => {
-                            const prod = products.find(
-                              (p) => p.oid === e.target.value,
-                            );
-                            if (prod) {
-                              setValue(
-                                `details.${index}.unitCost`,
-                                prod.price || 0,
-                              );
-                              trigger(`details.${index}.unitCost`);
-                            }
-                            trigger(`details.${index}.productId`);
-                          },
-                        })}
-                        onSearchChange={debouncedFetchProducts}
-                      />
-                    </td>
                     <td className="px-4 py-3">
                       <Input
                         placeholder={t("qrcode")}
@@ -432,6 +410,30 @@ export default function StockPage() {
                         }}
                       />
                     </td>
+                    <td className="px-4 py-3">
+                      <Select
+                        options={getProductOptions()}
+                        value={watch(`details.${index}.productId`)}
+                        error={errors.details?.[index]?.productId?.message}
+                        {...register(`details.${index}.productId`, {
+                          onChange: (e) => {
+                            const prod = products.find(
+                              (p) => p.oid === e.target.value,
+                            );
+                            if (prod) {
+                              setValue(
+                                `details.${index}.unitCost`,
+                                prod.price || 0,
+                              );
+                              trigger(`details.${index}.unitCost`);
+                            }
+                            trigger(`details.${index}.productId`);
+                          },
+                        })}
+                        onSearchChange={debouncedFetchProducts}
+                      />
+                    </td>
+
                     <td className="px-4 py-3">
                       <Input
                         type="number"
