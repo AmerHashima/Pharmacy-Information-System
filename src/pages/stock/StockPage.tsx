@@ -10,6 +10,8 @@ import {
   ArrowLeftRight,
   Download,
   Upload,
+  Package,
+  History,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -17,6 +19,9 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Card from "@/components/ui/Card";
+import PageHeader from "@/components/shared/PageHeader";
+import StockLevels from "./StockLevels";
+import StockTransactions from "./StockTransactions";
 import { useLookup } from "@/context/LookupContext";
 import { branchService } from "@/api/branchService";
 import { stakeholderService } from "@/api/stakeholderService";
@@ -32,6 +37,9 @@ import {
 
 export default function StockPage() {
   const { t, i18n } = useTranslation("stock");
+  const [activeTab, setActiveTab] = useState<
+    "levels" | "transactions" | "new_transaction"
+  >("levels");
   const { getLookupDetails } = useLookup();
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [suppliers, setSuppliers] = useState<StakeholderDto[]>([]);
@@ -233,342 +241,433 @@ export default function StockPage() {
 
   return (
     <div className="space-y-6 max-w-full mx-auto pb-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-        <div className="flex gap-2">
-          {typeCode === "STOCK_IN" && <Download className="text-green-600" />}
-          {typeCode === "STOCK_OUT" && <Upload className="text-red-600" />}
-          {typeCode === "TRANSFER" && (
-            <ArrowLeftRight className="text-blue-600" />
-          )}
+      <PageHeader title={t("title")}>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => setActiveTab("new_transaction")}
+            className="gap-2 shadow-lg shadow-blue-100 bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            {t("new_transaction", { defaultValue: "New Transaction" })}
+          </Button>
         </div>
+      </PageHeader>
+
+      <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl w-fit max-w-full overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setActiveTab("levels")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "levels"
+              ? "bg-white text-blue-600 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <Package className="h-4 w-4" />
+          {t("stock_levels")}
+        </button>
+        <button
+          onClick={() => setActiveTab("transactions")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "transactions"
+              ? "bg-white text-blue-600 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <History className="h-4 w-4" />
+          {t("transaction_history")}
+        </button>
+        <button
+          onClick={() => setActiveTab("new_transaction")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "new_transaction"
+              ? "bg-white text-blue-600 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <Plus className="h-4 w-4" />
+          {t("new_transaction", { defaultValue: "New Transaction" })}
+        </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="overflow-visible h-fit">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Select
-              label={t("transaction_type")}
-              options={getTransactionTypeOptions()}
-              error={errors.transactionTypeId?.message}
-              {...register("transactionTypeId")}
-            />
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
+        {activeTab === "levels" && <StockLevels />}
+        {activeTab === "transactions" && <StockTransactions />}
 
-            <Input
-              type="date"
-              label={t("transaction_date")}
-              error={errors.transactionDate?.message}
-              {...register("transactionDate")}
-            />
+        {activeTab === "new_transaction" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">
+                {t("new_transaction", { defaultValue: "New Transaction" })}
+              </h2>
+              <div className="flex gap-2">
+                {typeCode === "STOCK_IN" && (
+                  <Download className="text-green-600" />
+                )}
+                {typeCode === "STOCK_OUT" && (
+                  <Upload className="text-red-600" />
+                )}
+                {typeCode === "TRANSFER" && (
+                  <ArrowLeftRight className="text-blue-600" />
+                )}
+              </div>
+            </div>
 
-            <Input
-              label={t("reference_number")}
-              error={errors.referenceNumber?.message}
-              {...register("referenceNumber")}
-            />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="overflow-visible h-fit">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Select
+                    label={t("transaction_type")}
+                    options={getTransactionTypeOptions()}
+                    error={errors.transactionTypeId?.message}
+                    {...register("transactionTypeId")}
+                  />
 
-            {(typeCode === "STOCK_IN" || typeCode === "TRANSFER") && (
-              <Select
-                label={t("to_branch")}
-                options={getBranchOptions()}
-                error={errors.toBranchId?.message}
-                {...register("toBranchId")}
-              />
-            )}
+                  <Input
+                    type="date"
+                    label={t("transaction_date")}
+                    error={errors.transactionDate?.message}
+                    {...register("transactionDate")}
+                  />
 
-            {(typeCode === "STOCK_OUT" || typeCode === "TRANSFER") && (
-              <Select
-                label={t("from_branch")}
-                options={getBranchOptions()}
-                error={errors.fromBranchId?.message}
-                {...register("fromBranchId")}
-              />
-            )}
+                  <Input
+                    label={t("reference_number")}
+                    error={errors.referenceNumber?.message}
+                    {...register("referenceNumber")}
+                  />
 
-            {typeCode === "STOCK_IN" && (
-              <Select
-                label={t("supplier")}
-                options={getSupplierOptions()}
-                error={errors.supplierId?.message}
-                {...register("supplierId")}
-              />
-            )}
-          </div>
+                  {(typeCode === "STOCK_IN" || typeCode === "TRANSFER") && (
+                    <Select
+                      label={t("to_branch")}
+                      options={getBranchOptions()}
+                      error={errors.toBranchId?.message}
+                      {...register("toBranchId")}
+                    />
+                  )}
 
-          <div className="mt-4">
-            <Input
-              label={t("notes")}
-              error={errors.notes?.message}
-              {...register("notes")}
-            />
-          </div>
-        </Card>
+                  {(typeCode === "STOCK_OUT" || typeCode === "TRANSFER") && (
+                    <Select
+                      label={t("from_branch")}
+                      options={getBranchOptions()}
+                      error={errors.fromBranchId?.message}
+                      {...register("fromBranchId")}
+                    />
+                  )}
 
-        <Card className="overflow-visible min-h-[400px]">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">{t("items")}</h2>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                append({
-                  productId: "",
-                  qrcode: "",
-                  quantity: 1,
-                  unitCost: 0,
-                  batchNumber: "",
-                  expiryDate: "",
-                })
-              }
-              className="flex items-center gap-1"
-            >
-              <Plus size={16} />
-              {t("add_item")}
-            </Button>
-          </div>
+                  {typeCode === "STOCK_IN" && (
+                    <Select
+                      label={t("supplier")}
+                      options={getSupplierOptions()}
+                      error={errors.supplierId?.message}
+                      {...register("supplierId")}
+                    />
+                  )}
+                </div>
 
-          <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 min-w-[250px]">{t("qrcode")}</th>
-                  <th className="px-4 py-3 min-w-[250px]">{t("product")}</th>
-                  <th className="px-4 py-3 w-32">{t("quantity")}</th>
-                  <th className="px-4 py-3 w-32">{t("unit_cost")}</th>
-                  <th className="px-4 py-3 w-40">{t("batch_number")}</th>
-                  <th className="px-4 py-3 w-40">{t("expiry_date")}</th>
-                  <th className="px-4 py-3 w-20"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {fields.map((field, index) => (
-                  <tr key={field.id} className="bg-white">
-                    <td className="px-4 py-3">
-                      <Input
-                        placeholder={t("qrcode")}
-                        {...register(`details.${index}.qrcode`)}
-                        onKeyDown={async (e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const currentBarcode = watch(
-                              `details.${index}.qrcode`,
-                            );
-                            if (currentBarcode) {
-                              try {
-                                const res =
-                                  await productService.parseAndGetProduct({
-                                    barcodeInput: currentBarcode,
-                                  });
-                                if (
-                                  res.data.success &&
-                                  res.data.data?.productFound
-                                ) {
-                                  const prod = res.data.data.product;
-                                  const barcodeData = res.data.data.barcodeData;
+                <div className="mt-4">
+                  <Input
+                    label={t("notes")}
+                    error={errors.notes?.message}
+                    {...register("notes")}
+                  />
+                </div>
+              </Card>
 
-                                  // Ensure product is in our current options list
-                                  if (
-                                    prod &&
-                                    !products.find((p) => p.oid === prod.oid)
-                                  ) {
-                                    setProducts((prev) => [...prev, prod]);
+              <Card className="overflow-visible min-h-[400px]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">{t("items")}</h2>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      append({
+                        productId: "",
+                        qrcode: "",
+                        quantity: 1,
+                        unitCost: 0,
+                        batchNumber: "",
+                        expiryDate: "",
+                      })
+                    }
+                    className="flex items-center gap-1"
+                  >
+                    <Plus size={16} />
+                    {t("add_item")}
+                  </Button>
+                </div>
+
+                <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 min-w-[250px]">
+                          {t("qrcode")}
+                        </th>
+                        <th className="px-4 py-3 min-w-[250px]">
+                          {t("product")}
+                        </th>
+                        <th className="px-4 py-3 w-32">{t("quantity")}</th>
+                        <th className="px-4 py-3 w-32">{t("unit_cost")}</th>
+                        <th className="px-4 py-3 w-40">{t("batch_number")}</th>
+                        <th className="px-4 py-3 w-40">{t("expiry_date")}</th>
+                        <th className="px-4 py-3 w-20"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {fields.map((field, index) => (
+                        <tr key={field.id} className="bg-white">
+                          <td className="px-4 py-3">
+                            <Input
+                              placeholder={t("qrcode")}
+                              {...register(`details.${index}.qrcode`)}
+                              onKeyDown={async (e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  const currentBarcode = watch(
+                                    `details.${index}.qrcode`,
+                                  );
+                                  if (currentBarcode) {
+                                    try {
+                                      const res =
+                                        await productService.parseAndGetProduct(
+                                          {
+                                            barcodeInput: currentBarcode,
+                                          },
+                                        );
+                                      if (
+                                        res.data.success &&
+                                        res.data.data?.productFound
+                                      ) {
+                                        const prod = res.data.data.product;
+                                        const barcodeData =
+                                          res.data.data.barcodeData;
+
+                                        // Ensure product is in our current options list
+                                        if (
+                                          prod &&
+                                          !products.find(
+                                            (p) => p.oid === prod.oid,
+                                          )
+                                        ) {
+                                          setProducts((prev) => [
+                                            ...prev,
+                                            prod,
+                                          ]);
+                                        }
+
+                                        if (prod) {
+                                          setValue(
+                                            `details.${index}.productId`,
+                                            prod.oid,
+                                          );
+                                          setValue(
+                                            `details.${index}.unitCost`,
+                                            prod.price || 0,
+                                          );
+                                        }
+
+                                        if (barcodeData?.batchNumber) {
+                                          setValue(
+                                            `details.${index}.batchNumber`,
+                                            barcodeData.batchNumber,
+                                          );
+                                        }
+
+                                        if (barcodeData?.expiryDate) {
+                                          try {
+                                            // Format date if needed, assuming the format comes back properly but we may need to grab the first part (y-m-d)
+                                            const formattedExpiry = new Date(
+                                              barcodeData.expiryDate,
+                                            )
+                                              .toISOString()
+                                              .split("T")[0];
+                                            setValue(
+                                              `details.${index}.expiryDate`,
+                                              formattedExpiry,
+                                            );
+                                          } catch {
+                                            setValue(
+                                              `details.${index}.expiryDate`,
+                                              barcodeData.expiryDate,
+                                            );
+                                          }
+                                        }
+
+                                        toast.success(
+                                          "Product found via scanning",
+                                        );
+                                      } else {
+                                        toast.error(
+                                          res.data.data?.productMessage ||
+                                            "Product not found",
+                                        );
+                                      }
+                                    } catch (err: any) {
+                                      toast.error(
+                                        err.response?.data?.message ||
+                                          t("error_occurred"),
+                                      );
+                                    }
                                   }
-
+                                }
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Select
+                              options={getProductOptions()}
+                              value={watch(`details.${index}.productId`)}
+                              error={
+                                errors.details?.[index]?.productId?.message
+                              }
+                              {...register(`details.${index}.productId`, {
+                                onChange: (e) => {
+                                  const prod = products.find(
+                                    (p) => p.oid === e.target.value,
+                                  );
                                   if (prod) {
-                                    setValue(
-                                      `details.${index}.productId`,
-                                      prod.oid,
-                                    );
                                     setValue(
                                       `details.${index}.unitCost`,
                                       prod.price || 0,
                                     );
+                                    trigger(`details.${index}.unitCost`);
                                   }
+                                  trigger(`details.${index}.productId`);
+                                },
+                              })}
+                              onSearchChange={debouncedFetchProducts}
+                            />
+                          </td>
 
-                                  if (barcodeData?.batchNumber) {
-                                    setValue(
-                                      `details.${index}.batchNumber`,
-                                      barcodeData.batchNumber,
-                                    );
-                                  }
-
-                                  if (barcodeData?.expiryDate) {
-                                    try {
-                                      // Format date if needed, assuming the format comes back properly but we may need to grab the first part (y-m-d)
-                                      const formattedExpiry = new Date(
-                                        barcodeData.expiryDate,
-                                      )
-                                        .toISOString()
-                                        .split("T")[0];
-                                      setValue(
-                                        `details.${index}.expiryDate`,
-                                        formattedExpiry,
-                                      );
-                                    } catch {
-                                      setValue(
-                                        `details.${index}.expiryDate`,
-                                        barcodeData.expiryDate,
-                                      );
-                                    }
-                                  }
-
-                                  toast.success("Product found via scanning");
-                                } else {
-                                  toast.error(
-                                    res.data.data?.productMessage ||
-                                      "Product not found",
-                                  );
+                          <td className="px-4 py-3">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              onKeyDown={(e) => {
+                                if (
+                                  e.key === "-" ||
+                                  e.key === "e" ||
+                                  e.key === "E"
+                                ) {
+                                  e.preventDefault();
                                 }
-                              } catch (err: any) {
-                                toast.error(
-                                  err.response?.data?.message ||
-                                    t("error_occurred"),
-                                );
-                              }
-                            }
-                          }
-                        }}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Select
-                        options={getProductOptions()}
-                        value={watch(`details.${index}.productId`)}
-                        error={errors.details?.[index]?.productId?.message}
-                        {...register(`details.${index}.productId`, {
-                          onChange: (e) => {
-                            const prod = products.find(
-                              (p) => p.oid === e.target.value,
-                            );
-                            if (prod) {
-                              setValue(
-                                `details.${index}.unitCost`,
-                                prod.price || 0,
-                              );
-                              trigger(`details.${index}.unitCost`);
-                            }
-                            trigger(`details.${index}.productId`);
-                          },
-                        })}
-                        onSearchChange={debouncedFetchProducts}
-                      />
-                    </td>
+                              }}
+                              error={errors.details?.[index]?.quantity?.message}
+                              {...register(`details.${index}.quantity`, {
+                                valueAsNumber: true,
+                                min: 0,
+                                onChange: (e) => {
+                                  setValue(
+                                    `details.${index}.quantity`,
+                                    parseFloat(e.target.value) || 0,
+                                  );
+                                  trigger(`details.${index}.quantity`);
+                                },
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              onKeyDown={(e) => {
+                                if (
+                                  e.key === "-" ||
+                                  e.key === "e" ||
+                                  e.key === "E"
+                                ) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              error={errors.details?.[index]?.unitCost?.message}
+                              {...register(`details.${index}.unitCost`, {
+                                valueAsNumber: true,
+                                min: 0,
+                                onChange: (e) => {
+                                  setValue(
+                                    `details.${index}.unitCost`,
+                                    parseFloat(e.target.value) || 0,
+                                  );
+                                  trigger(`details.${index}.unitCost`);
+                                },
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              placeholder={t("batch_placeholder")}
+                              {...register(`details.${index}.batchNumber`, {
+                                onChange: (e) => {
+                                  setValue(
+                                    `details.${index}.batchNumber`,
+                                    e.target.value,
+                                  );
+                                  trigger(`details.${index}.batchNumber`);
+                                },
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="date"
+                              {...register(`details.${index}.expiryDate`, {
+                                onChange: (e) => {
+                                  setValue(
+                                    `details.${index}.expiryDate`,
+                                    e.target.value,
+                                  );
+                                  trigger(`details.${index}.expiryDate`);
+                                },
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="text-red-500 hover:text-red-700 p-1"
+                              disabled={fields.length === 1}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {errors.details?.root && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {errors.details.root.message}
+                  </p>
+                )}
+              </Card>
 
-                    <td className="px-4 py-3">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        onKeyDown={(e) => {
-                          if (e.key === "-" || e.key === "e" || e.key === "E") {
-                            e.preventDefault();
-                          }
-                        }}
-                        error={errors.details?.[index]?.quantity?.message}
-                        {...register(`details.${index}.quantity`, {
-                          valueAsNumber: true,
-                          min: 0,
-                          onChange: (e) => {
-                            setValue(
-                              `details.${index}.quantity`,
-                              parseFloat(e.target.value) || 0,
-                            );
-                            trigger(`details.${index}.quantity`);
-                          },
-                        })}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        onKeyDown={(e) => {
-                          if (e.key === "-" || e.key === "e" || e.key === "E") {
-                            e.preventDefault();
-                          }
-                        }}
-                        error={errors.details?.[index]?.unitCost?.message}
-                        {...register(`details.${index}.unitCost`, {
-                          valueAsNumber: true,
-                          min: 0,
-                          onChange: (e) => {
-                            setValue(
-                              `details.${index}.unitCost`,
-                              parseFloat(e.target.value) || 0,
-                            );
-                            trigger(`details.${index}.unitCost`);
-                          },
-                        })}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        placeholder={t("batch_placeholder")}
-                        {...register(`details.${index}.batchNumber`, {
-                          onChange: (e) => {
-                            setValue(
-                              `details.${index}.batchNumber`,
-                              e.target.value,
-                            );
-                            trigger(`details.${index}.batchNumber`);
-                          },
-                        })}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        type="date"
-                        {...register(`details.${index}.expiryDate`, {
-                          onChange: (e) => {
-                            setValue(
-                              `details.${index}.expiryDate`,
-                              e.target.value,
-                            );
-                            trigger(`details.${index}.expiryDate`);
-                          },
-                        })}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                        disabled={fields.length === 1}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => reset()}
+                >
+                  {t("clear")}
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Save size={18} />
+                  {t("save_transaction")}
+                </Button>
+              </div>
+            </form>
           </div>
-          {errors.details?.root && (
-            <p className="mt-2 text-sm text-red-500">
-              {errors.details.root.message}
-            </p>
-          )}
-        </Card>
-
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={() => reset()}>
-            {t("clear")}
-          </Button>
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="flex items-center gap-2"
-          >
-            <Save size={18} />
-            {t("save_transaction")}
-          </Button>
-        </div>
-      </form>
+        )}
+      </div>
     </div>
   );
 }
