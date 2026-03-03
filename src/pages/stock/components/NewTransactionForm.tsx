@@ -147,7 +147,7 @@ export default function NewTransactionForm() {
               filters: [
                 {
                   propertyName: "StakeholderTypeCode",
-                  value: "SUPPLIER",
+                  value: "VENDOR",
                   operation: FilterOperation.Equals,
                 },
               ],

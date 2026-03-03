@@ -10,15 +10,32 @@ export default function TransactionHeader({
 }: TransactionHeaderProps) {
   const { t } = useTranslation("stock");
 
+  const getTitle = () => {
+    switch (typeCode) {
+      case "22222222-2222-2222-2222-222222222030":
+        return t("stock_in");
+      case "22222222-2222-2222-2222-222222222031":
+        return t("stock_out");
+      case "22222222-2222-2222-2222-222222222032":
+        return t("transfer");
+      default:
+        return t("transaction");
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-xl font-semibold text-gray-800">
-        {t("new_transaction", { defaultValue: "New Transaction" })}
+    <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+        {getTitle()}
       </h2>
       <div className="flex gap-2">
-        {typeCode === "STOCK_IN" && <Download className="text-green-600" />}
-        {typeCode === "STOCK_OUT" && <Upload className="text-red-600" />}
-        {typeCode === "TRANSFER" && (
+        {typeCode === "22222222-2222-2222-2222-222222222030" && (
+          <Download className="text-green-600" />
+        )}
+        {typeCode === "22222222-2222-2222-2222-222222222031" && (
+          <Upload className="text-red-600" />
+        )}
+        {typeCode === "22222222-2222-2222-2222-222222222032" && (
           <ArrowLeftRight className="text-blue-600" />
         )}
       </div>

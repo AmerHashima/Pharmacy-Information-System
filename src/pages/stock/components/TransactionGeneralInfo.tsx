@@ -20,6 +20,7 @@ export default function TransactionGeneralInfo({
   const { t } = useTranslation("stock");
   const {
     register,
+    watch,
     formState: { errors },
   } = useFormContext();
 
@@ -31,6 +32,7 @@ export default function TransactionGeneralInfo({
         <Select
           label={t("transaction_type")}
           options={transactionTypeOptions}
+          value={watch("transactionTypeId")}
           error={(errors.transactionTypeId as any)?.message}
           {...register("transactionTypeId")}
         />
@@ -38,12 +40,14 @@ export default function TransactionGeneralInfo({
         <Input
           type="date"
           label={t("transaction_date")}
+          value={watch("transactionDate")}
           error={(errors.transactionDate as any)?.message}
           {...register("transactionDate")}
         />
 
         <Input
           label={t("reference_number")}
+          value={watch("referenceNumber")}
           error={(errors.referenceNumber as any)?.message}
           {...register("referenceNumber")}
         />
@@ -54,6 +58,7 @@ export default function TransactionGeneralInfo({
           <Select
             label={t("to_branch")}
             options={branchOptions}
+            value={watch("toBranchId")}
             error={(errors.toBranchId as any)?.message}
             {...register("toBranchId")}
           />
@@ -65,6 +70,7 @@ export default function TransactionGeneralInfo({
           <Select
             label={t("from_branch")}
             options={branchOptions}
+            value={watch("fromBranchId")}
             error={(errors.fromBranchId as any)?.message}
             {...register("fromBranchId")}
           />
@@ -75,6 +81,7 @@ export default function TransactionGeneralInfo({
           <Select
             label={t("supplier")}
             options={supplierOptions}
+            value={watch("supplierId")}
             error={(errors.supplierId as any)?.message}
             {...register("supplierId")}
           />
@@ -84,6 +91,7 @@ export default function TransactionGeneralInfo({
       <div className="mt-4">
         <Input
           label={t("notes")}
+          value={watch("notes")}
           error={(errors.notes as any)?.message}
           {...register("notes")}
         />

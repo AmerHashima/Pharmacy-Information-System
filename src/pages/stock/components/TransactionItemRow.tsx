@@ -124,6 +124,7 @@ export default function TransactionItemRow({
           step="0.01"
           min="0"
           placeholder="0.00"
+          value={watch(`details.${index}.quantity`)}
           onKeyDown={(e) => {
             if (["-", "e", "E"].includes(e.key)) e.preventDefault();
           }}
@@ -147,6 +148,7 @@ export default function TransactionItemRow({
           step="0.01"
           min="0"
           placeholder="0.00"
+          value={watch(`details.${index}.unitCost`)}
           onKeyDown={(e) => {
             if (["-", "e", "E"].includes(e.key)) e.preventDefault();
           }}
@@ -167,6 +169,7 @@ export default function TransactionItemRow({
       <td className="px-4 py-3">
         <Input
           placeholder={t("batch_placeholder")}
+          value={watch(`details.${index}.batchNumber`)}
           {...register(`details.${index}.batchNumber`, {
             onChange: (e) => {
               setValue(`details.${index}.batchNumber`, e.target.value);
@@ -178,6 +181,7 @@ export default function TransactionItemRow({
       <td className="px-4 py-3">
         <Input
           type="date"
+          value={watch(`details.${index}.expiryDate`)}
           {...register(`details.${index}.expiryDate`, {
             onChange: (e) => {
               setValue(`details.${index}.expiryDate`, e.target.value);

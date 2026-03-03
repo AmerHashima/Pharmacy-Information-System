@@ -14,7 +14,6 @@ import SaleDetailPage from "@/pages/sales/SaleDetailPage";
 import StakeholdersPage from "@/pages/stakeholders/StakeholdersPage";
 import StockPage from "@/pages/stock/StockPage";
 import StockTransactionsPage from "@/pages/stock/StockTransactionsPage";
-import StockTransactionDetailPage from "@/pages/stock/StockTransactionDetailPage";
 import UsersPage from "@/pages/users/UsersPage";
 import LookupsPage from "@/pages/lookups/LookupsPage";
 import LookupDetailPage from "@/pages/lookups/LookupDetailPage";
@@ -27,6 +26,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 import { LookupProvider } from "@/context/LookupContext";
+import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
 
 const queryClient = new QueryClient();
 

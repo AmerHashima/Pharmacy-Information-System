@@ -505,6 +505,7 @@ export interface StockTransactionDetailDto {
 }
 
 export interface CreateStockTransactionDto {
+  oid?: string;
   transactionTypeId: string;
   fromBranchId?: string;
   toBranchId?: string;

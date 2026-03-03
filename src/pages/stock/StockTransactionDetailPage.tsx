@@ -164,6 +164,16 @@ export default function StockTransactionDetailPage() {
           if (tRes.data.success && tRes.data.data) {
             const tData = tRes.data.data;
 
+            const initialDetails = tData.details.map((d) => ({
+              productId: d.productId,
+              quantity: d.quantity,
+              unitCost: d.unitCost,
+              batchNumber: d.batchNumber || "",
+              expiryDate: d.expiryDate?.split("T")[0] || "",
+              notes: d.notes || "",
+              qrcode: "",
+            }));
+
             // Format for form
             reset({
               transactionTypeId: tData.transactionTypeId,
@@ -173,35 +183,43 @@ export default function StockTransactionDetailPage() {
               referenceNumber: tData.referenceNumber || "",
               notes: tData.notes || "",
               transactionDate: tData.transactionDate?.split("T")[0] || "",
-              details: tData.details.map((d) => ({
-                productId: d.productId,
-                quantity: d.quantity,
-                unitCost: d.unitCost,
-                batchNumber: d.batchNumber || "",
-                expiryDate: d.expiryDate?.split("T")[0] || "",
-                notes: d.notes || "",
-                qrcode: "",
-              })),
+              details: initialDetails,
             });
 
-            // Ensure detailed products are in the list for selection labels
-            const uniqueProductIds = Array.from(
-              new Set(tData.details.map((d) => d.productId)),
+            // Pre-populate products from details to ensure labels are visible immediately
+            const detailedProducts = tData.details.map(
+              (d) =>
+                ({
+                  oid: d.productId,
+                  drugName: d.productName || "Product",
+                  gtin: d.productGTIN || "",
+                  price: d.unitCost,
+                }) as ProductDto,
             );
-            // We'll need a way to fetch multiple products by IDs or just rely on the fact that they'll be in the list if they are common.
-            // For now, let's just make sure we have at least the initial product names.
-            setProducts(
-              tData.details.map(
-                (d) =>
-                  ({
-                    oid: d.productId,
-                    drugName: d.productName || "Product",
-                    gtin: d.productGTIN || "",
-                  }) as ProductDto,
-              ),
-            );
+            setProducts(detailedProducts);
 
-            await fetchProducts();
+            // Fetch additional products but preserve the ones from details
+            try {
+              const pRes = await productService.query({
+                request: {
+                  pagination: { pageNumber: 1, pageSize: 50 },
+                },
+              });
+              if (pRes.data.success && pRes.data.data) {
+                const fetched = pRes.data.data.data;
+                setProducts((prev) => {
+                  const merged = [...prev];
+                  fetched.forEach((fp) => {
+                    if (!merged.find((m) => m.oid === fp.oid)) {
+                      merged.push(fp);
+                    }
+                  });
+                  return merged;
+                });
+              }
+            } catch (err) {
+              console.error("Failed to fetch additional products", err);
+            }
           }
         }
       } catch (err) {
@@ -220,6 +238,7 @@ export default function StockTransactionDetailPage() {
     try {
       const dto: UpdateStockTransactionDto = {
         ...data,
+        oid: id,
         status: "PENDING",
         details: data.details.map((d, index) => ({
           ...d,
