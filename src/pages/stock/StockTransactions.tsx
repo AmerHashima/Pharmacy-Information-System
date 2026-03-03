@@ -9,7 +9,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { stockService } from "@/api/stockService";
 import { useQueryTable } from "@/hooks/useQuery";
-import { StockTransactionResponseDto, FilterOperation } from "@/types";
+import {
+  StockTransactionResponseDto,
+  FilterOperation,
+  FilterRequest,
+} from "@/types";
 
 export default function StockTransactions() {
   const { t } = useTranslation("stock");
@@ -31,10 +35,16 @@ export default function StockTransactions() {
   });
 
   const loadData = useCallback(() => {
-    const filters = [];
+    const filters = [
+      new FilterRequest(
+        "referenceNumber",
+        searchTerm,
+        FilterOperation.Contains,
+      ),
+    ];
     if (searchTerm) {
       filters.push({
-        propertyName: "productName",
+        propertyName: "referenceNumber",
         value: searchTerm,
         operation: FilterOperation.Contains,
       });
