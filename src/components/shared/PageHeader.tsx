@@ -24,12 +24,12 @@ export default function PageHeader({
       </div>
       <div className="flex items-center gap-3">
         {children}
-        {/* {onAddClick && (
+        {onAddClick && (
           <Button onClick={onAddClick} className="gap-2">
             <Plus className="h-4 w-4" />
             {addLabel || t("common:addNew")}
           </Button>
-        )} */}
+        )}
       </div>
     </div>
   );
