@@ -19,7 +19,11 @@ export function useQueryTable<T>({ service, pageSize = 10 }: UseQueryOptions) {
   const [totalRecords, setTotalRecords] = useState(0);
 
   const fetch = useCallback(
-    async (searchTerm = "", extraFilters: FilterRequest[] = []) => {
+    async (
+      searchTerm = "",
+      extraFilters: FilterRequest[] = [],
+      overridePage?: number,
+    ) => {
       setIsLoading(true);
       try {
         const filters = [...extraFilters];
@@ -38,7 +42,10 @@ export function useQueryTable<T>({ service, pageSize = 10 }: UseQueryOptions) {
           request: {
             filters,
             sort: [],
-            pagination: { pageNumber, pageSize },
+            pagination: {
+              pageNumber: overridePage ?? pageNumber,
+              pageSize,
+            },
           },
         };
         const res = await service(req);
@@ -46,6 +53,9 @@ export function useQueryTable<T>({ service, pageSize = 10 }: UseQueryOptions) {
           setData(res.data.data.data);
           setTotalPages(res.data.data.totalPages);
           setTotalRecords(res.data.data.totalRecords);
+          if (overridePage !== undefined) {
+            setPageNumber(overridePage);
+          }
         }
       } finally {
         setIsLoading(false);

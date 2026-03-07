@@ -11,17 +11,6 @@ export default function StockTabs({ activeTab, setActiveTab }: StockTabsProps) {
 
   return (
     <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl w-fit max-w-full overflow-x-auto no-scrollbar">
-      {/* <button
-        onClick={() => setActiveTab("levels")}
-        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-          activeTab === "levels"
-            ? "bg-white text-blue-600 shadow-sm"
-            : "text-gray-500 hover:text-gray-700"
-        }`}
-      >
-        <Package className="h-4 w-4" />
-        {t("stock_levels")}
-      </button> */}
       <button
         onClick={() => setActiveTab("new_transaction")}
         className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -43,6 +32,17 @@ export default function StockTabs({ activeTab, setActiveTab }: StockTabsProps) {
       >
         <History className="h-4 w-4" />
         {t("transaction_history")}
+      </button>
+      <button
+        onClick={() => setActiveTab("levels")}
+        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          activeTab === "levels"
+            ? "bg-white text-blue-600 shadow-sm"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+      >
+        <Package className="h-4 w-4" />
+        {t("stock_levels")}
       </button>
     </div>
   );

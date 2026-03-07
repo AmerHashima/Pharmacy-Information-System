@@ -32,7 +32,7 @@ export default function StockPage() {
       <StockTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
-        {/* {activeTab === "levels" && <StockLevels />} */}
+        {activeTab === "levels" && <StockLevels />}
         {activeTab === "transactions" && <StockTransactions />}
         {activeTab === "new_transaction" && <NewTransactionForm />}
       </div>

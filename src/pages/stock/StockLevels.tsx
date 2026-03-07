@@ -52,11 +52,17 @@ export default function StockLevels() {
       });
     }
     fetch("", filters);
-  }, [fetch, searchTerm, branchId]);
+  }, [fetch, searchTerm, branchId, pageNumber]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPageNumber(1);
+  }, [searchTerm, branchId, setPageNumber]);
+
+  // Fetch data when filters or page changes
   useEffect(() => {
     loadData();
-  }, [loadData, pageNumber]);
+  }, [loadData]);
 
   const columns = [
     {
