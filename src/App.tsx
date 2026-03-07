@@ -16,6 +16,7 @@ import StockPage from "@/pages/stock/StockPage";
 import StockTransactionsPage from "@/pages/stock/StockTransactionsPage";
 import UsersPage from "@/pages/users/UsersPage";
 import LookupsPage from "@/pages/lookups/LookupsPage";
+import RSDPage from "@/pages/rsd/RSDPage";
 import LookupDetailPage from "@/pages/lookups/LookupDetailPage";
 import IntegrationProvidersPage from "@/pages/integrations/IntegrationProvidersPage";
 import BranchIntegrationsPage from "@/pages/integrations/BranchIntegrationsPage";
@@ -63,6 +64,7 @@ export default function App() {
               path="stock/transactions/:id"
               element={<StockTransactionDetailPage />}
             />
+            <Route path="rsd" element={<RSDPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="lookups" element={<LookupsPage />} />
             <Route path="lookups/:lookupCode" element={<LookupDetailPage />} />

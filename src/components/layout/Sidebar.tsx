@@ -31,6 +31,7 @@ const menuIcons: Record<string, any> = {
   "/roles": ShieldCheck,
   "/lookups": Settings,
   "/integrations": Plug,
+  "/rsd": ShieldCheck,
 };
 
 // paths → translation keys (sidebar namespace)
@@ -49,6 +50,7 @@ const menuKeys: {
   { labelKey: "systemUsers", icon: "/users", path: "/users" },
   { labelKey: "roles", icon: "/roles", path: "/roles" },
   { labelKey: "lookups", icon: "/lookups", path: "/lookups" },
+  { labelKey: "rsd", icon: "/rsd", path: "/rsd" },
   {
     labelKey: "integrations",
     icon: "/integrations",
