@@ -43,6 +43,8 @@ export default function TransactionItemRow({
     <tr className="bg-white">
       <td className="px-4 py-3">
         <Select
+          data-row={index}
+          data-col={0}
           options={getProductOptions()}
           value={watch(`details.${index}.productId`)}
           error={itemErrors?.productId?.message}
@@ -62,6 +64,8 @@ export default function TransactionItemRow({
 
       <td className="px-4 py-3">
         <Input
+          data-row={index}
+          data-col={1}
           type="number"
           step="0.01"
           min="0"
@@ -86,6 +90,8 @@ export default function TransactionItemRow({
       </td>
       <td className="px-4 py-3">
         <Input
+          data-row={index}
+          data-col={2}
           type="number"
           step="0.01"
           min="0"
@@ -110,6 +116,8 @@ export default function TransactionItemRow({
       </td>
       <td className="px-4 py-3">
         <Input
+          data-row={index}
+          data-col={3}
           placeholder={t("batch_placeholder")}
           value={watch(`details.${index}.batchNumber`)}
           {...register(`details.${index}.batchNumber`, {
@@ -122,6 +130,8 @@ export default function TransactionItemRow({
       </td>
       <td className="px-4 py-3">
         <Input
+          data-row={index}
+          data-col={4}
           type="date"
           value={watch(`details.${index}.expiryDate`)}
           {...register(`details.${index}.expiryDate`, {

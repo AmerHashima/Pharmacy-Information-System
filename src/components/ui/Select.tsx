@@ -173,13 +173,16 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           e.preventDefault();
           break;
         case "ArrowDown":
-          e.preventDefault();
-          if (!isOpen) setIsOpen(true);
-          setHighlightedIndex((i) => Math.min(i + 1, filtered.length - 1));
+          if (isOpen) {
+            e.preventDefault();
+            setHighlightedIndex((i) => Math.min(i + 1, filtered.length - 1));
+          }
           break;
         case "ArrowUp":
-          e.preventDefault();
-          setHighlightedIndex((i) => Math.max(i - 1, 0));
+          if (isOpen) {
+            e.preventDefault();
+            setHighlightedIndex((i) => Math.max(i - 1, 0));
+          }
           break;
         case "Escape":
           setIsOpen(false);
@@ -258,6 +261,20 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ]
             .filter(Boolean)
             .join(" ")}
+          {...Object.keys(rest)
+            .filter((key) => key.startsWith("data-"))
+            .reduce((obj, key) => ({ ...obj, [key]: (rest as any)[key] }), {})}
+          onKeyDown={(e) => {
+            if (
+              !isOpen &&
+              ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+                e.key,
+              )
+            ) {
+              // Don't preventDefault here, let it bubble for grid navigation
+              return;
+            }
+          }}
         >
           <span
             className={

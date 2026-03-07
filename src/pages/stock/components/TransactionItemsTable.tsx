@@ -22,7 +22,8 @@ export default function TransactionItemsTable({
   setProducts,
   debouncedFetchProducts,
 }: TransactionItemsTableProps) {
-  const { t } = useTranslation("stock");
+  const { t, i18n } = useTranslation("stock");
+  const isRtl = i18n.dir() === "rtl";
   const {
     control,
     formState: { errors },
@@ -75,6 +76,52 @@ export default function TransactionItemsTable({
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || t("error_occurred"));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    const isInput =
+      target.tagName === "INPUT" ||
+      target.tagName === "SELECT" ||
+      target.getAttribute("role") === "button";
+
+    if (!isInput) return;
+
+    const row = parseInt(target.getAttribute("data-row") || "-1");
+    const col = parseInt(target.getAttribute("data-col") || "-1");
+
+    if (row === -1 || col === -1) return;
+
+    let nextRow = row;
+    let nextCol = col;
+
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        nextRow = Math.max(0, row - 1);
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        nextRow = Math.min(fields.length - 1, row + 1);
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        nextCol = isRtl ? Math.min(4, col + 1) : Math.max(0, col - 1);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        nextCol = isRtl ? Math.max(0, col - 1) : Math.min(4, col + 1);
+        break;
+      default:
+        return;
+    }
+
+    if (nextRow !== row || nextCol !== col) {
+      const nextElement = document.querySelector(
+        `[data-row="${nextRow}"][data-col="${nextCol}"]`,
+      ) as HTMLElement;
+      nextElement?.focus();
     }
   };
 
@@ -145,7 +192,10 @@ export default function TransactionItemsTable({
         </Button>
       </div>
 
-      <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
+      <div
+        className="overflow-x-auto overflow-y-visible min-h-[300px]"
+        onKeyDown={handleKeyDown}
+      >
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
