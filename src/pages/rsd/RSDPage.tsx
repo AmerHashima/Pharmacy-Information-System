@@ -399,9 +399,9 @@ export default function RSDPage() {
                 {selectedIndices.length}/{products.length} Selected
               </span>
               <Button
-                variant="primary"
+                variant={canAcceptDirect ? "primary" : "success"}
                 size="sm"
-                className="shadow-sm shadow-blue-200 flex items-center gap-2"
+                className="shadow-sm flex items-center gap-2 shadow-blue-200"
                 disabled={isLoading || selectedIndices.length === 0}
                 onClick={handleAccept}
               >
