@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, Search, Trash2, Calendar, Hash } from "lucide-react";
+import {
+  ShieldCheck,
+  Search,
+  Trash2,
+  Calendar,
+  Hash,
+  CheckCircle2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -9,17 +16,26 @@ import Select from "@/components/ui/Select";
 import Table from "@/components/ui/Table";
 import { rsdService } from "@/api/rsdService";
 import { branchService } from "@/api/branchService";
-import { BranchDto, RsdProductDto } from "@/types";
+import { stockService } from "@/api/stockService";
+import { productService } from "@/api/productService";
+import { useLookup } from "@/context/LookupContext";
+import {
+  BranchDto,
+  RsdProductDto,
+  CreateStockTransactionDto,
+  FilterOperation,
+} from "@/types";
 
 export default function RSDPage() {
-  const { t } = useTranslation("sidebar");
+  const { t } = useTranslation(["sidebar", "stock"]);
+  const { getLookupDetails } = useLookup();
   const [dispatchNotificationId, setDispatchNotificationId] = useState("");
-  const [branchId, setBranchId] = useState(
-    "5b4badcc-7088-49bb-a034-c3c6a9409b8b",
-  );
+  const [branchId, setBranchId] = useState("");
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [products, setProducts] = useState<RsdProductDto[]>([]);
+  const [fromGLN, setFromGLN] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEdited, setIsEdited] = useState(false);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -34,12 +50,14 @@ export default function RSDPage() {
   }, []);
 
   const handleFetch = async () => {
-    if (!dispatchNotificationId) {
-      toast.error("Please provide both Notification ID and Branch");
+    if (!dispatchNotificationId || !branchId) {
+      toast.error("Please provide a Notification ID and Branch ID");
       return;
     }
 
     setIsLoading(true);
+    setProducts([]);
+    setIsEdited(false);
     try {
       const res = await rsdService.getDispatchDetail({
         dispatchNotificationId,
@@ -48,12 +66,153 @@ export default function RSDPage() {
 
       if (res.data.success && res.data.data?.products) {
         setProducts(res.data.data.products);
+        setFromGLN(res.data.data.fromGLN);
         toast.success(res.data.message || "Details fetched successfully");
       } else {
         toast.error(res.data.message || "Failed to fetch details");
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createStockTransaction = async (acceptedProducts: RsdProductDto[]) => {
+    try {
+      // 1. Get Transaction Type (Stock In / Purchase)
+      const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
+      const stockInType = transactionTypes.find(
+        (type) =>
+          type.valueNameEn?.toLowerCase().includes("stock in") ||
+          type.valueNameEn?.toLowerCase().includes("purchase") ||
+          type.lookupDetailCode === "STOCK_IN",
+      );
+
+      if (!stockInType) {
+        toast.error("Stock In transaction type not found");
+        return;
+      }
+
+      // 2. Map RSD Products to internal Product IDs by GTIN
+      const details = await Promise.all(
+        acceptedProducts.map(async (p, index) => {
+          // Search for product by GTIN
+          const pRes = await productService.query({
+            request: {
+              pagination: { pageNumber: 1, pageSize: 1 },
+              filters: [
+                {
+                  propertyName: "gtin",
+                  value: p.gtin || "",
+                  operation: FilterOperation.Equals,
+                },
+              ],
+            },
+          });
+
+          const internalProduct = pRes.data.data?.data?.[0];
+
+          return {
+            productId: internalProduct?.oid || "", // We might need a fallback or error if not found
+            productName: internalProduct?.drugName || "Unknown Product",
+            quantity: p.quantity,
+            gtin: p.gtin || "",
+            batchNumber: p.batchNumber || "",
+            expiryDate: p.expiryDate || "",
+            unitCost: 0,
+            totalCost: 0,
+            lineNumber: index + 1,
+            notes: "RSD Automated Stock In",
+          };
+        }),
+      );
+
+      const missingProducts = details.filter((d) => !d.productId);
+      if (missingProducts.length > 0) {
+        toast.error(
+          `${missingProducts.length} products were not found in the system by GTIN.`,
+        );
+        // We might still proceed or stop. User said they should get into stock.
+      }
+
+      // 3. Submit Transaction
+      const dto: CreateStockTransactionDto = {
+        transactionTypeId: stockInType.oid,
+        toBranchId: branchId,
+        referenceNumber: dispatchNotificationId,
+        notificationId: dispatchNotificationId,
+        transactionDate: new Date().toISOString().split("T")[0],
+        status: "APPROVED", // Auto-approve since it's confirmed from RSD
+        details: details.filter((d) => d.productId), // Only include found products
+      };
+
+      const res = await stockService.createStockTransaction(dto);
+      if (res.data.success) {
+        toast.success("Internal stock transaction created successfully");
+      } else {
+        toast.error("Failed to create internal stock transaction");
+      }
+    } catch (err) {
+      console.error("Failed to sync with stock", err);
+      toast.error("Error syncing with stock management");
+    }
+  };
+
+  const handleAccept = async () => {
+    if (products.length === 0) {
+      toast.error("No products to accept");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      let success = false;
+      let finalProducts = products;
+
+      if (!isEdited) {
+        // CASE 1: Accept without edits
+        const res = await rsdService.acceptDispatch({
+          dispatchNotificationId,
+          branchId,
+        });
+        success = res.data.success;
+        if (success) {
+          toast.success("Dispatch accepted successfully (Direct)");
+        } else {
+          toast.error(res.data.message || "Failed to accept dispatch");
+        }
+      } else {
+        // CASE 2: Accept with edits (Batch)
+        const res = await rsdService.acceptBatch({
+          branchId,
+          fromGLN,
+          products: products.map((p) => ({
+            gtin: p.gtin,
+            quantity: p.quantity,
+            batchNumber: p.batchNumber,
+            expiryDate: p.expiryDate,
+          })),
+        });
+        success = res.data.success;
+        if (success && res.data.data?.products) {
+          finalProducts = res.data.data.products;
+          toast.success("Dispatch accepted successfully (Batch)");
+        } else {
+          toast.error(res.data.message || "Failed to accept batch");
+        }
+      }
+
+      if (success) {
+        // 4. Sync with Stock
+        await createStockTransaction(finalProducts);
+        setProducts([]);
+        setIsEdited(false);
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "An error occurred during acceptance",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -67,10 +226,12 @@ export default function RSDPage() {
     const newProducts = [...products];
     newProducts[index] = { ...newProducts[index], [field]: value };
     setProducts(newProducts);
+    setIsEdited(true);
   };
 
   const removeProduct = (index: number) => {
     setProducts(products.filter((_, i) => i !== index));
+    setIsEdited(true);
   };
 
   const columns = [
@@ -113,7 +274,13 @@ export default function RSDPage() {
       cell: (info: any) => (
         <Input
           type="date"
-          value={info.getValue() ? info.getValue().split("T")[0] : ""}
+          value={
+            info.getValue()
+              ? info.getValue().includes("T")
+                ? info.getValue().split("T")[0]
+                : info.getValue()
+              : ""
+          }
           onChange={(e) =>
             updateProduct(info.row.index, "expiryDate", e.target.value)
           }
@@ -147,7 +314,7 @@ export default function RSDPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-gray-900">
-              {t("rsd")}
+              {t("sidebar:rsd")}
             </h1>
             <p className="text-sm text-gray-500 font-medium">
               Drug Track and Trace System Integration
@@ -204,7 +371,10 @@ export default function RSDPage() {
                   Notified Products
                 </h2>
                 <p className="text-xs text-gray-500 font-medium font-mono uppercase tracking-tight">
-                  ID: {dispatchNotificationId}
+                  ID: {dispatchNotificationId}{" "}
+                  {isEdited && (
+                    <span className="text-amber-500 ml-2">(Edited)</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -215,18 +385,18 @@ export default function RSDPage() {
               <Button
                 variant="primary"
                 size="sm"
-                className="shadow-sm shadow-blue-200"
-                onClick={() => {
-                  toast.success(
-                    "Ready for next step with " + products.length + " items",
-                  );
-                  console.log(
-                    "Current State to be used in next API:",
-                    products,
-                  );
-                }}
+                className="shadow-sm shadow-blue-200 flex items-center gap-2"
+                disabled={isLoading}
+                onClick={handleAccept}
               >
-                Accept Dispatch
+                {isLoading ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    {isEdited ? "Accept Batch (Edited)" : "Accept Direct"}
+                  </>
+                )}
               </Button>
             </div>
           </div>

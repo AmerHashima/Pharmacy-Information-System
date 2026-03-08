@@ -706,3 +706,36 @@ export interface RsdDispatchDetailResponseData {
   products: RsdProductDto[];
   rawResponse: string | null;
 }
+
+export interface RsdAcceptDispatchRequest {
+  dispatchNotificationId: string;
+  branchId: string;
+}
+
+export interface RsdAcceptDispatchResponseData {
+  success: boolean;
+  responseCode: string | null;
+  responseMessage: string | null;
+  rawResponse: string | null;
+  dispatchNotificationId: string | null;
+}
+
+export interface RsdAcceptBatchRequest {
+  branchId: string;
+  fromGLN: string | null;
+  products: {
+    gtin: string | null;
+    quantity: number;
+    batchNumber: string | null;
+    expiryDate: string | null;
+  }[];
+}
+
+export interface RsdAcceptBatchResponseData {
+  success: boolean;
+  responseCode: string | null;
+  responseMessage: string | null;
+  notificationId: string | null;
+  products: RsdProductDto[];
+  rawResponse: string | null;
+}
