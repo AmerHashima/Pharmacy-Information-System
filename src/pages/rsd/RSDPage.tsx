@@ -401,7 +401,9 @@ export default function RSDPage() {
               <Button
                 variant={canAcceptDirect ? "primary" : "success"}
                 size="sm"
-                className="shadow-sm flex items-center gap-2 shadow-blue-200"
+                className={`shadow-sm flex items-center gap-2 ${
+                  canAcceptDirect ? "shadow-blue-200" : "shadow-emerald-200"
+                }`}
                 disabled={isLoading || selectedIndices.length === 0}
                 onClick={handleAccept}
               >
