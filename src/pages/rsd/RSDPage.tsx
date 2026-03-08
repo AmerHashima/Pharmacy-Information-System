@@ -301,23 +301,20 @@ export default function RSDPage() {
     {
       header: "Expiry Date",
       accessorKey: "expiryDate",
-      cell: (info: any) => (
-        <Input
-          type="date"
-          value={
-            info.getValue()
-              ? info.getValue().includes("T")
-                ? info.getValue().split("T")[0]
-                : info.getValue()
-              : ""
-          }
-          onChange={(e) =>
-            updateProduct(info.row.index, "expiryDate", e.target.value)
-          }
-          className="w-40 bg-transparent border-gray-200 focus:bg-white transition-all h-9"
-          icon={<Calendar size={14} />}
-        />
-      ),
+      cell: (info: any) => {
+        const val = info.getValue();
+        const dateStr = val
+          ? val.includes("T")
+            ? val.split("T")[0]
+            : val
+          : "";
+        return (
+          <div className="flex items-center gap-2 text-gray-600 font-medium h-9 px-3">
+            <Calendar size={14} className="text-gray-400" />
+            <span>{dateStr}</span>
+          </div>
+        );
+      },
     },
   ];
 
