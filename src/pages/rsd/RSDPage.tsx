@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   ShieldCheck,
   Search,
-  Trash2,
   Calendar,
   Hash,
   CheckCircle2,
@@ -33,6 +32,7 @@ export default function RSDPage() {
   const [branchId, setBranchId] = useState("");
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [products, setProducts] = useState<RsdProductDto[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [fromGLN, setFromGLN] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEdited, setIsEdited] = useState(false);
@@ -57,6 +57,7 @@ export default function RSDPage() {
 
     setIsLoading(true);
     setProducts([]);
+    setSelectedIndices([]);
     setIsEdited(false);
     try {
       const res = await rsdService.getDispatchDetail({
@@ -80,7 +81,6 @@ export default function RSDPage() {
 
   const createStockTransaction = async (acceptedProducts: RsdProductDto[]) => {
     try {
-      // 1. Get Transaction Type (Stock In / Purchase)
       const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
       const stockInType = transactionTypes.find(
         (type) =>
@@ -94,10 +94,8 @@ export default function RSDPage() {
         return;
       }
 
-      // 2. Map RSD Products to internal Product IDs by GTIN
       const details = await Promise.all(
         acceptedProducts.map(async (p, index) => {
-          // Search for product by GTIN
           const pRes = await productService.query({
             request: {
               pagination: { pageNumber: 1, pageSize: 1 },
@@ -114,7 +112,7 @@ export default function RSDPage() {
           const internalProduct = pRes.data.data?.data?.[0];
 
           return {
-            productId: internalProduct?.oid || "", // We might need a fallback or error if not found
+            productId: internalProduct?.oid || "",
             productName: internalProduct?.drugName || "Unknown Product",
             quantity: p.quantity,
             gtin: p.gtin || "",
@@ -133,18 +131,16 @@ export default function RSDPage() {
         toast.error(
           `${missingProducts.length} products were not found in the system by GTIN.`,
         );
-        // We might still proceed or stop. User said they should get into stock.
       }
 
-      // 3. Submit Transaction
       const dto: CreateStockTransactionDto = {
         transactionTypeId: stockInType.oid,
         toBranchId: branchId,
         referenceNumber: dispatchNotificationId,
         notificationId: dispatchNotificationId,
         transactionDate: new Date().toISOString().split("T")[0],
-        status: "APPROVED", // Auto-approve since it's confirmed from RSD
-        details: details.filter((d) => d.productId), // Only include found products
+        status: "APPROVED",
+        details: details.filter((d) => d.productId),
       };
 
       const res = await stockService.createStockTransaction(dto);
@@ -160,34 +156,38 @@ export default function RSDPage() {
   };
 
   const handleAccept = async () => {
-    if (products.length === 0) {
-      toast.error("No products to accept");
+    if (selectedIndices.length === 0) {
+      toast.error("No products selected to accept");
       return;
     }
 
     setIsLoading(true);
     try {
       let success = false;
-      let finalProducts = products;
+      let finalProducts: RsdProductDto[] = [];
+      const selectedProducts = products.filter((_, i) =>
+        selectedIndices.includes(i),
+      );
 
-      if (!isEdited) {
-        // CASE 1: Accept without edits
+      const isAllSelected = selectedIndices.length === products.length;
+
+      if (isAllSelected && !isEdited) {
         const res = await rsdService.acceptDispatch({
           dispatchNotificationId,
           branchId,
         });
         success = res.data.success;
         if (success) {
+          finalProducts = products;
           toast.success("Dispatch accepted successfully (Direct)");
         } else {
           toast.error(res.data.message || "Failed to accept dispatch");
         }
       } else {
-        // CASE 2: Accept with edits (Batch)
         const res = await rsdService.acceptBatch({
           branchId,
           fromGLN,
-          products: products.map((p) => ({
+          products: selectedProducts.map((p) => ({
             gtin: p.gtin,
             quantity: p.quantity,
             batchNumber: p.batchNumber,
@@ -204,9 +204,9 @@ export default function RSDPage() {
       }
 
       if (success) {
-        // 4. Sync with Stock
         await createStockTransaction(finalProducts);
         setProducts([]);
+        setSelectedIndices([]);
         setIsEdited(false);
       }
     } catch (err: any) {
@@ -229,12 +229,42 @@ export default function RSDPage() {
     setIsEdited(true);
   };
 
-  const removeProduct = (index: number) => {
-    setProducts(products.filter((_, i) => i !== index));
-    setIsEdited(true);
+  const toggleSelect = (index: number) => {
+    setSelectedIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIndices.length === products.length) {
+      setSelectedIndices([]);
+    } else {
+      setSelectedIndices(products.map((_, i) => i));
+    }
   };
 
   const columns = [
+    {
+      id: "select",
+      header: () => (
+        <input
+          type="checkbox"
+          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+          checked={
+            products.length > 0 && selectedIndices.length === products.length
+          }
+          onChange={toggleSelectAll}
+        />
+      ),
+      cell: (info: any) => (
+        <input
+          type="checkbox"
+          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+          checked={selectedIndices.includes(info.row.index)}
+          onChange={() => toggleSelect(info.row.index)}
+        />
+      ),
+    },
     {
       header: "GTIN",
       accessorKey: "gtin",
@@ -289,21 +319,10 @@ export default function RSDPage() {
         />
       ),
     },
-    {
-      header: "",
-      id: "actions",
-      cell: (info: any) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => removeProduct(info.row.index)}
-          className="text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-        >
-          <Trash2 size={16} />
-        </Button>
-      ),
-    },
   ];
+
+  const canAcceptDirect =
+    selectedIndices.length === products.length && !isEdited;
 
   return (
     <div className="space-y-6">
@@ -380,13 +399,13 @@ export default function RSDPage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-wider">
-                {products.length} Items
+                {selectedIndices.length}/{products.length} Selected
               </span>
               <Button
                 variant="primary"
                 size="sm"
                 className="shadow-sm shadow-blue-200 flex items-center gap-2"
-                disabled={isLoading}
+                disabled={isLoading || selectedIndices.length === 0}
                 onClick={handleAccept}
               >
                 {isLoading ? (
@@ -394,7 +413,7 @@ export default function RSDPage() {
                 ) : (
                   <>
                     <CheckCircle2 size={16} />
-                    {isEdited ? "Accept Batch (Edited)" : "Accept Direct"}
+                    {canAcceptDirect ? "Accept Direct" : "Accept Batch"}
                   </>
                 )}
               </Button>
