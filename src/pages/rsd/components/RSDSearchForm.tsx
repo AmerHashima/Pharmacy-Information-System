@@ -26,7 +26,7 @@ const RSDSearchForm: React.FC<RSDSearchFormProps> = ({
   onFetch,
 }) => {
   return (
-    <Card className="p-6 border-none shadow-lg bg-white rounded-3xl">
+    <Card className=" border-none shadow-lg bg-white rounded-3xl">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
