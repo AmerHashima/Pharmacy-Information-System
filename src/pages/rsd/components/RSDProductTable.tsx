@@ -58,9 +58,16 @@ const RSDProductTable: React.FC<RSDProductTableProps> = ({
           />
         ),
       },
+      // {
+      //   header: "GTIN",
+      //   accessorKey: "gtin",
+      //   cell: (info: any) => (
+      //     <span className="font-bold text-gray-700">{info.getValue()}</span>
+      //   ),
+      // },
       {
-        header: "GTIN",
-        accessorKey: "gtin",
+        header: "Product Name",
+        accessorKey: "productName",
         cell: (info: any) => (
           <span className="font-bold text-gray-700">{info.getValue()}</span>
         ),

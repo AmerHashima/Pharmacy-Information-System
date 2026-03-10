@@ -5,14 +5,7 @@ import toast from "react-hot-toast";
 import { rsdService } from "@/api/rsdService";
 import { branchService } from "@/api/branchService";
 import { stockService } from "@/api/stockService";
-import { productService } from "@/api/productService";
-import { useLookup } from "@/context/LookupContext";
-import {
-  BranchDto,
-  RsdProductDto,
-  CreateStockTransactionDto,
-  FilterOperation,
-} from "@/types";
+import { BranchDto, RsdProductDto, CreateStockTransactionDto } from "@/types";
 import PageHeader from "@/components/shared/PageHeader";
 
 // Components
@@ -22,7 +15,6 @@ import RSDEmptyState from "./components/RSDEmptyState";
 
 export default function RSDPage() {
   const { t } = useTranslation(["sidebar", "stock"]);
-  const { getLookupDetails } = useLookup();
 
   // State
   const [dispatchNotificationId, setDispatchNotificationId] = useState("");
@@ -80,80 +72,41 @@ export default function RSDPage() {
   const createStockTransaction = useCallback(
     async (acceptedProducts: RsdProductDto[]) => {
       try {
-        const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
-        const stockInType = transactionTypes.find(
-          (type) =>
-            type.valueNameEn?.toLowerCase().includes("stock in") ||
-            type.valueNameEn?.toLowerCase().includes("purchase") ||
-            type.lookupDetailCode === "STOCK_IN",
-        );
-
-        if (!stockInType) {
-          toast.error("Stock In transaction type not found");
-          return;
-        }
-
-        const details = await Promise.all(
-          acceptedProducts.map(async (p, index) => {
-            const pRes = await productService.query({
-              request: {
-                pagination: { pageNumber: 1, pageSize: 1 },
-                filters: [
-                  {
-                    propertyName: "gtin",
-                    value: p.gtin || "",
-                    operation: FilterOperation.Equals,
-                  },
-                ],
-              },
-            });
-
-            const internalProduct = pRes.data.data?.data?.[0];
-
-            return {
-              productId: internalProduct?.oid || "",
-              productName: internalProduct?.drugName || "Unknown Product",
-              quantity: p.quantity,
-              gtin: p.gtin || "",
-              batchNumber: p.batchNumber || "",
-              expiryDate: p.expiryDate || "",
-              unitCost: 0,
-              totalCost: 0,
-              lineNumber: index + 1,
-              notes: "RSD Automated Stock In",
-            };
-          }),
-        );
-
-        const missingProducts = details.filter((d) => !d.productId);
-        if (missingProducts.length > 0) {
-          toast.error(
-            `${missingProducts.length} products were not found in the system by GTIN.`,
-          );
-        }
-
         const dto: CreateStockTransactionDto = {
-          transactionTypeId: stockInType.oid,
+          transactionTypeId: "22222222-2222-2222-2222-222222222030",
           toBranchId: branchId,
           referenceNumber: dispatchNotificationId,
           notificationId: dispatchNotificationId,
           transactionDate: new Date().toISOString().split("T")[0],
           status: "APPROVED",
-          details: details.filter((d) => d.productId),
+          details: acceptedProducts.map((p, index) => ({
+            productId: p.productId || "",
+            productName: p.productName || "",
+            quantity: p.quantity,
+            gtin: p.gtin || "",
+            batchNumber: p.batchNumber || "",
+            expiryDate: p.expiryDate || "",
+            unitCost: 0,
+            totalCost: 0,
+            lineNumber: index + 1,
+            notes: "RSD Automated Stock In",
+          })),
         };
 
         const res = await stockService.createStockTransaction(dto);
         if (res.data.success) {
           toast.success("Internal stock transaction created successfully");
         } else {
-          toast.error("Failed to create internal stock transaction");
+          toast.error(
+            res.data.message || "Failed to create internal stock transaction",
+          );
         }
       } catch (err) {
         console.error("Failed to sync with stock", err);
         toast.error("Error syncing with stock management");
       }
     },
-    [branchId, dispatchNotificationId, getLookupDetails],
+    [branchId, dispatchNotificationId],
   );
 
   const handleAccept = useCallback(async () => {

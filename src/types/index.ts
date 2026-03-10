@@ -694,6 +694,9 @@ export interface RsdProductDto {
   expiryDate: string | null;
   quantity: number;
   responseCode: string | null;
+  /** Returned by the accept-dispatch / accept-batch response. */
+  productId?: string | null;
+  productName?: string | null;
 }
 
 export interface RsdDispatchDetailResponseData {
