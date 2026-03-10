@@ -1,4 +1,4 @@
-import { Plus, Search, QrCode } from "lucide-react";
+import { Plus, Search, ScanLine } from "lucide-react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
@@ -43,9 +43,11 @@ export default function TransactionItemsTable({
   });
 
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleGlobalBarcodeScan = async (barcode: string) => {
-    if (!barcode) return;
+    if (!barcode || isScanning) return;
+    setIsScanning(true);
     try {
       const res = await productService.parseAndGetProduct({
         barcodeInput: barcode,
@@ -85,6 +87,8 @@ export default function TransactionItemsTable({
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || t("error_occurred"));
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -137,29 +141,36 @@ export default function TransactionItemsTable({
   return (
     <Card className="overflow-visible min-h-[400px] border-none shadow-lg">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
             <Plus size={20} />
           </div>
           <h2 className="text-xl font-bold text-gray-800">{t("items")}</h2>
-        </div>
+        </div> */}
 
         <div className="flex flex-1 flex-col sm:flex-row items-stretch gap-3 w-full max-w-2xl">
           <div className="flex-1">
-            <Input
-              placeholder={t("qrcode") || "Scan barcode"}
-              value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
-              icon={<QrCode size={18} />}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleGlobalBarcodeScan(barcodeInput);
-                }
-              }}
-              autoFocus
-              className="bg-white border-gray-200 focus:ring-blue-500/20"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-green-500">
+                <ScanLine className="h-5 w-5" />
+              </div>
+              <Input
+                placeholder={t("qrcode") || "Scan barcode"}
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                disabled={isScanning}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleGlobalBarcodeScan(barcodeInput);
+                  }
+                }}
+                autoFocus
+                className={`pl-10  text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
+                  isScanning ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
           </div>
           <div className="flex-1">
             <Select

@@ -10,7 +10,7 @@ interface ProductSearchProps {
   isSearching: boolean;
   filteredProducts: ProductDto[];
   addToCart: (product: ProductDto) => void;
-  onBarcodeScan: (barcode: string) => void;
+  onBarcodeScan: (barcode: string) => void | Promise<void>;
   barcodeInputRef: RefObject<HTMLInputElement>;
 }
 
@@ -25,11 +25,12 @@ export default function ProductSearch({
 }: ProductSearchProps) {
   const { t } = useTranslation("sales");
   const [barcodeValue, setBarcodeValue] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col md:flex-row gap-3">
       {/* QR / Barcode Scanner Input — primary input */}
-      <div className="relative">
+      <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-green-500">
           <ScanLine className="h-5 w-5" />
         </div>
@@ -38,20 +39,28 @@ export default function ProductSearch({
           placeholder={t("scanPlaceholder")}
           value={barcodeValue}
           onChange={(e) => setBarcodeValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
+          disabled={isScanning}
+          onKeyDown={async (e) => {
+            if (e.key === "Enter" && !isScanning) {
               e.preventDefault();
-              onBarcodeScan(barcodeValue);
-              setBarcodeValue("");
+              setIsScanning(true);
+              try {
+                await onBarcodeScan(barcodeValue);
+              } finally {
+                setBarcodeValue("");
+                setIsScanning(false);
+              }
             }
           }}
-          className="pl-10 h-14 text-lg border-green-200 focus:ring-green-500 bg-green-50/30"
+          className={`pl-10 h-12 text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
+            isScanning ? "opacity-50 cursor-not-allowed" : ""
+          }`}
           autoFocus
         />
       </div>
 
       {/* Name Search Input */}
-      <div className="relative">
+      <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
           <Search className="h-5 w-5" />
         </div>

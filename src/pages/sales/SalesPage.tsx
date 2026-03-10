@@ -10,7 +10,7 @@ export default function SalesPage() {
   const [activeTab, setActiveTab] = useState<"form" | "history">("form");
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <PageHeader
         title={t("title")}
         // onAddClick={() => setActiveTab("form")}

@@ -348,6 +348,22 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-[70vh]">
       <div className="xl:col-span-2 space-y-5 min-w-0">
+        <ProductSearch
+          search={search}
+          setSearch={setSearch}
+          isSearching={isSearching}
+          filteredProducts={products}
+          addToCart={addToCart}
+          onBarcodeScan={handleBarcodeScan}
+          barcodeInputRef={barcodeInputRef}
+        />
+        <CartItemTable
+          cart={cart}
+          setCart={setCart}
+          updateQuantity={updateQuantity}
+          updateCartItem={updateCartItem}
+          removeFromCart={removeFromCart}
+        />
         <SaleGeneralInfo
           selectedBranchId={selectedBranchId}
           setSelectedBranchId={setSelectedBranchId}
@@ -368,24 +384,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
           onLoadMoreBranches={handleLoadMoreBranches}
           branchesHasMore={branchesHasMore}
           isLoadingMoreBranches={isLoadingMoreBranches}
-        />
-
-        <ProductSearch
-          search={search}
-          setSearch={setSearch}
-          isSearching={isSearching}
-          filteredProducts={products}
-          addToCart={addToCart}
-          onBarcodeScan={handleBarcodeScan}
-          barcodeInputRef={barcodeInputRef}
-        />
-
-        <CartItemTable
-          cart={cart}
-          setCart={setCart}
-          updateQuantity={updateQuantity}
-          updateCartItem={updateCartItem}
-          removeFromCart={removeFromCart}
         />
       </div>
 
