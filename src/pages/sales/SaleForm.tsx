@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { productService } from "@/api/productService";
@@ -33,9 +33,18 @@ export interface CartItem {
 
 export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const { t } = useTranslation("sales");
+  const BRANCHES_PAGE_SIZE = 20;
+
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
+
+  // Branches — paginated
   const [branches, setBranches] = useState<BranchDto[]>([]);
+  const [branchesPage, setBranchesPage] = useState(1);
+  const [branchesHasMore, setBranchesHasMore] = useState(false);
+  const [isLoadingMoreBranches, setIsLoadingMoreBranches] = useState(false);
+  const currentBranchSearchRef = useRef<string>("");
+
   const [paymentMethods, setPaymentMethods] = useState<AppLookupDetailDto[]>(
     [],
   );
@@ -63,19 +72,54 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const [isDataLoading, setIsDataLoading] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Paginated branch fetch ──────────────────────────────────────────────
+  const fetchBranches = useCallback(
+    async (search: string, page: number, replace: boolean) => {
+      setIsLoadingMoreBranches(true);
+      try {
+        const res = await branchService.query({
+          request: {
+            filters: search.trim()
+              ? [
+                  new FilterRequest(
+                    "branchName",
+                    search,
+                    FilterOperation.Contains,
+                  ),
+                ]
+              : [],
+            sort: [],
+            pagination: { pageNumber: page, pageSize: BRANCHES_PAGE_SIZE },
+          },
+        });
+        const fetched = res.data.data?.data || [];
+        const hasNext = res.data.data?.hasNextPage ?? false;
+        setBranches((prev) =>
+          replace
+            ? fetched
+            : [
+                ...prev,
+                ...fetched.filter((f) => !prev.find((p) => p.oid === f.oid)),
+              ],
+        );
+        setBranchesHasMore(hasNext);
+        setBranchesPage(page);
+      } catch (err) {
+        console.error("Branch fetch failed", err);
+      } finally {
+        setIsLoadingMoreBranches(false);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [],
+  );
+
   // Initial Fetch: Branches, Payment Methods
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsDataLoading(true);
       try {
-        const bRes = await branchService.query({
-          request: {
-            filters: [],
-            sort: [],
-            pagination: { pageNumber: 1, pageSize: 50 },
-          },
-        });
-        setBranches(bRes.data.data?.data || []);
+        await fetchBranches("", 1, true);
 
         const lRes = await lookupService.getByCode("PAYMENT_METHOD");
         const methods = lRes.data.data?.lookupDetails || [];
@@ -131,35 +175,23 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Debounced Branch Search
+  // Debounced Branch Search (resets to page 1)
   const handleBranchSearch = useMemo(() => {
     let timer: any;
     return (val: string) => {
+      currentBranchSearchRef.current = val;
       clearTimeout(timer);
-      timer = setTimeout(async () => {
-        try {
-          const res = await branchService.query({
-            request: {
-              filters: val.trim()
-                ? [
-                    new FilterRequest(
-                      "branchName",
-                      val,
-                      FilterOperation.Contains,
-                    ),
-                  ]
-                : [],
-              sort: [],
-              pagination: { pageNumber: 1, pageSize: 50 },
-            },
-          });
-          setBranches(res.data.data?.data || []);
-        } catch (err) {
-          console.error("Branch search failed", err);
-        }
+      timer = setTimeout(() => {
+        fetchBranches(val, 1, true);
       }, 400);
     };
-  }, []);
+  }, [fetchBranches]);
+
+  // Load next page of branches
+  const handleLoadMoreBranches = useCallback(() => {
+    if (!branchesHasMore || isLoadingMoreBranches) return;
+    fetchBranches(currentBranchSearchRef.current, branchesPage + 1, false);
+  }, [fetchBranches, branchesHasMore, isLoadingMoreBranches, branchesPage]);
 
   // QR/Barcode scan handler
   const handleBarcodeScan = async (barcode: string) => {
@@ -333,6 +365,9 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
           setNotes={setNotes}
           branches={branches}
           handleBranchSearch={handleBranchSearch}
+          onLoadMoreBranches={handleLoadMoreBranches}
+          branchesHasMore={branchesHasMore}
+          isLoadingMoreBranches={isLoadingMoreBranches}
         />
 
         <ProductSearch

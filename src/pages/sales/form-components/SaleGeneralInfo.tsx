@@ -20,6 +20,12 @@ interface SaleGeneralInfoProps {
   setNotes: (val: string) => void;
   branches: BranchDto[];
   handleBranchSearch: (val: string) => void;
+  /** Called when user scrolls to the bottom of the branch dropdown. */
+  onLoadMoreBranches: () => void;
+  /** Whether more branch pages are available. */
+  branchesHasMore: boolean;
+  /** True while the next page of branches is loading. */
+  isLoadingMoreBranches: boolean;
 }
 
 export default function SaleGeneralInfo({
@@ -39,6 +45,9 @@ export default function SaleGeneralInfo({
   setNotes,
   branches,
   handleBranchSearch,
+  onLoadMoreBranches,
+  branchesHasMore,
+  isLoadingMoreBranches,
 }: SaleGeneralInfoProps) {
   const { t } = useTranslation("sales");
 
@@ -57,6 +66,10 @@ export default function SaleGeneralInfo({
             value: b.oid,
             label: b.branchName ?? "",
           }))}
+          // ── Pagination ──────────────────────────────────────────────────
+          onLoadMore={onLoadMoreBranches}
+          hasMore={branchesHasMore}
+          isLoadingMore={isLoadingMoreBranches}
         />
         <Input
           label={t("customerName")}

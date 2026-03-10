@@ -35,10 +35,16 @@ export default function StockTransactionDetailPage() {
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [suppliers, setSuppliers] = useState<StakeholderDto[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [productsPage, setProductsPage] = useState(1);
+  const [productsHasMore, setProductsHasMore] = useState(false);
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const PRODUCTS_PAGE_SIZE = 20;
+  const currentSearchRef = useRef<string | undefined>(undefined);
 
   const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
 
@@ -85,48 +91,67 @@ export default function StockTransactionDetailPage() {
 
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const fetchProducts = async (search?: string) => {
+  const fetchProducts = async (
+    search: string | undefined,
+    page: number,
+    replace: boolean,
+  ) => {
+    setIsLoadingMoreProducts(true);
     try {
       const res = await productService.query({
         request: {
-          pagination: { pageNumber: 1, pageSize: 50 },
+          pagination: { pageNumber: page, pageSize: PRODUCTS_PAGE_SIZE },
           filters: search
             ? [{ propertyName: "drugName", value: search, operation: 2 }]
             : [],
         },
       });
       if (res.data.success && res.data.data) {
+        const fetched = res.data.data.data;
+        const hasNext = res.data.data.hasNextPage;
         setProducts((prev) => {
-          const fetchedProducts = res.data.data.data;
           const currentDetails = getValues("details") || [];
-          const selectedProductIds = currentDetails
+          const selectedIds = currentDetails
             .map((d) => d.productId)
             .filter(Boolean);
-
           const selectedProducts = prev.filter((p) =>
-            selectedProductIds.includes(p.oid),
+            selectedIds.includes(p.oid),
           );
-
-          const merged = [...fetchedProducts];
-          selectedProducts.forEach((sp) => {
-            if (!merged.find((m) => m.oid === sp.oid)) {
-              merged.push(sp);
-            }
-          });
-
-          return merged;
+          if (replace) {
+            const merged = [...fetched];
+            selectedProducts.forEach((sp) => {
+              if (!merged.find((m) => m.oid === sp.oid)) merged.push(sp);
+            });
+            return merged;
+          } else {
+            const merged = [...prev];
+            fetched.forEach((p) => {
+              if (!merged.find((m) => m.oid === p.oid)) merged.push(p);
+            });
+            return merged;
+          }
         });
+        setProductsHasMore(hasNext);
+        setProductsPage(page);
       }
     } catch (err) {
       console.error("Failed to fetch products", err);
+    } finally {
+      setIsLoadingMoreProducts(false);
     }
   };
 
   const debouncedFetchProducts = (search: string) => {
+    currentSearchRef.current = search || undefined;
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      fetchProducts(search);
+      fetchProducts(currentSearchRef.current, 1, true);
     }, 300);
+  };
+
+  const handleLoadMoreProducts = () => {
+    if (!productsHasMore || isLoadingMoreProducts) return;
+    fetchProducts(currentSearchRef.current, productsPage + 1, false);
   };
 
   useEffect(() => {
@@ -201,25 +226,8 @@ export default function StockTransactionDetailPage() {
             );
             setProducts(detailedProducts);
 
-            // Fetch additional products but preserve the ones from details
             try {
-              const pRes = await productService.query({
-                request: {
-                  pagination: { pageNumber: 1, pageSize: 50 },
-                },
-              });
-              if (pRes.data.success && pRes.data.data) {
-                const fetched = pRes.data.data.data;
-                setProducts((prev) => {
-                  const merged = [...prev];
-                  fetched.forEach((fp) => {
-                    if (!merged.find((m) => m.oid === fp.oid)) {
-                      merged.push(fp);
-                    }
-                  });
-                  return merged;
-                });
-              }
+              await fetchProducts(undefined, 1, true);
             } catch (err) {
               console.error("Failed to fetch additional products", err);
             }
@@ -336,6 +344,9 @@ export default function StockTransactionDetailPage() {
               products={products}
               setProducts={setProducts}
               debouncedFetchProducts={debouncedFetchProducts}
+              onLoadMoreProducts={handleLoadMoreProducts}
+              productsHasMore={productsHasMore}
+              isLoadingMoreProducts={isLoadingMoreProducts}
             />
 
             <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">

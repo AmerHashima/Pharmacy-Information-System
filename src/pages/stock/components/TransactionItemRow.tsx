@@ -13,6 +13,12 @@ interface TransactionItemRowProps {
   products: ProductDto[];
   setProducts: React.Dispatch<React.SetStateAction<ProductDto[]>>;
   debouncedFetchProducts: (search: string) => void;
+  /** Called when the user scrolls to the bottom of the product dropdown. */
+  onLoadMoreProducts: () => void;
+  /** Whether more product pages are available on the server. */
+  productsHasMore: boolean;
+  /** True while the next page of products is in-flight. */
+  isLoadingMoreProducts: boolean;
 }
 
 export default function TransactionItemRow({
@@ -20,8 +26,11 @@ export default function TransactionItemRow({
   remove,
   isRemoveDisabled,
   products,
-  setProducts,
+  setProducts: _setProducts,
   debouncedFetchProducts,
+  onLoadMoreProducts,
+  productsHasMore,
+  isLoadingMoreProducts,
 }: TransactionItemRowProps) {
   const { t } = useTranslation("stock");
   const {
@@ -60,6 +69,10 @@ export default function TransactionItemRow({
             },
           })}
           onSearchChange={debouncedFetchProducts}
+          // ── Pagination ────────────────────────────────────────────────────
+          onLoadMore={onLoadMoreProducts}
+          hasMore={productsHasMore}
+          isLoadingMore={isLoadingMoreProducts}
         />
       </td>
 

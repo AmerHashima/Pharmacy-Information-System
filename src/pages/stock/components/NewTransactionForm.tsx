@@ -20,19 +20,37 @@ import {
   FilterOperation,
 } from "@/types";
 
-import TransactionHeader from "./TransactionHeader";
 import TransactionGeneralInfo from "./TransactionGeneralInfo";
 import TransactionItemsTable from "./TransactionItemsTable";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const PRODUCTS_PAGE_SIZE = 20;
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function NewTransactionForm() {
   const { t, i18n } = useTranslation("stock");
   const { getLookupDetails } = useLookup();
+
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [suppliers, setSuppliers] = useState<StakeholderDto[]>([]);
+
+  // Products — paginated list
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [productsPage, setProductsPage] = useState(1);
+  const [productsHasMore, setProductsHasMore] = useState(false);
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
 
+  // Track latest search term so `loadMore` can use the same filter
+  const currentSearchRef = useRef<string | undefined>(undefined);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
   const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
+
+  // ─── Schema ───────────────────────────────────────────────────────────────
 
   const schema = z.object({
     transactionTypeId: z.string().min(1, t("transaction_type_required")),
@@ -74,53 +92,89 @@ export default function NewTransactionForm() {
     (type) => type.oid === selectedTypeId,
   );
   const typeCode = selectedType?.oid;
-  // console.log("selectedType", selectedType);
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  // ─── Products fetching ───────────────────────────────────────────────────
 
-  const fetchProducts = async (search?: string) => {
+  /**
+   * Core fetch function.
+   * @param search  - filter string (undefined = no filter)
+   * @param page    - which page to load
+   * @param replace - true = replace the list (new search), false = append (load more)
+   */
+  const fetchProducts = async (
+    search: string | undefined,
+    page: number,
+    replace: boolean,
+  ) => {
+    setIsLoadingMoreProducts(true);
     try {
       const res = await productService.query({
         request: {
-          pagination: { pageNumber: 1, pageSize: 50 },
+          pagination: { pageNumber: page, pageSize: PRODUCTS_PAGE_SIZE },
           filters: search
             ? [{ propertyName: "drugName", value: search, operation: 2 }]
             : [],
         },
       });
+
       if (res.data.success && res.data.data) {
+        const fetched: ProductDto[] = res.data.data.data;
+        // PagedResult exposes hasNextPage directly — no manual count math needed
+        const hasNext: boolean = res.data.data.hasNextPage;
+
         setProducts((prev) => {
-          const fetchedProducts = res.data.data.data;
+          // Always preserve currently-selected products so their labels don't vanish
           const currentDetails = getValues("details") || [];
-          const selectedProductIds = currentDetails
+          const selectedIds = currentDetails
             .map((d) => d.productId)
             .filter(Boolean);
-
           const selectedProducts = prev.filter((p) =>
-            selectedProductIds.includes(p.oid),
+            selectedIds.includes(p.oid),
           );
 
-          const merged = [...fetchedProducts];
-          selectedProducts.forEach((sp) => {
-            if (!merged.find((m) => m.oid === sp.oid)) {
-              merged.push(sp);
-            }
-          });
-
-          return merged;
+          if (replace) {
+            // Start fresh, but keep selected products at the back
+            const merged = [...fetched];
+            selectedProducts.forEach((sp) => {
+              if (!merged.find((m) => m.oid === sp.oid)) merged.push(sp);
+            });
+            return merged;
+          } else {
+            // Append new page, deduplicate
+            const merged = [...prev];
+            fetched.forEach((p) => {
+              if (!merged.find((m) => m.oid === p.oid)) merged.push(p);
+            });
+            return merged;
+          }
         });
+
+        setProductsHasMore(hasNext);
+        setProductsPage(page);
       }
     } catch (err) {
       console.error("Failed to fetch products", err);
+    } finally {
+      setIsLoadingMoreProducts(false);
     }
   };
 
+  /** Called by the Select's onSearchChange (debounced by us). Resets to page 1. */
   const debouncedFetchProducts = (search: string) => {
+    currentSearchRef.current = search || undefined;
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      fetchProducts(search);
+      fetchProducts(currentSearchRef.current, 1, true);
     }, 300);
   };
+
+  /** Called by the Select's onLoadMore when the user scrolls to the bottom. */
+  const handleLoadMoreProducts = () => {
+    if (!productsHasMore || isLoadingMoreProducts) return;
+    fetchProducts(currentSearchRef.current, productsPage + 1, false);
+  };
+
+  // ─── Initial data load ───────────────────────────────────────────────────
 
   useEffect(() => {
     const fetchData = async () => {
@@ -150,13 +204,18 @@ export default function NewTransactionForm() {
           setBranches(bRes.data.data.data);
         if (sRes.data.success && sRes.data.data)
           setSuppliers(sRes.data.data.data);
-        await fetchProducts();
+
+        // Load first page of products
+        await fetchProducts(undefined, 1, true);
       } catch (err) {
         console.error("Failed to fetch dependencies", err);
       }
     };
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ─── Submit ───────────────────────────────────────────────────────────────
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -185,6 +244,8 @@ export default function NewTransactionForm() {
     }
   };
 
+  // ─── Options helpers ──────────────────────────────────────────────────────
+
   const getBranchOptions = () =>
     branches.map((b) => ({ value: b.oid, label: b.branchName }));
 
@@ -200,11 +261,11 @@ export default function NewTransactionForm() {
           : t.valueNameEn || "",
     }));
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
     <FormProvider {...methods}>
       <div className="space-y-4">
-        {/* <TransactionHeader typeCode={typeCode || ""} /> */}
-
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <TransactionGeneralInfo
             typeCode={typeCode || ""}
@@ -217,6 +278,10 @@ export default function NewTransactionForm() {
             products={products}
             setProducts={setProducts}
             debouncedFetchProducts={debouncedFetchProducts}
+            // ── Pagination props ──────────────────────────────────────────
+            onLoadMoreProducts={handleLoadMoreProducts}
+            productsHasMore={productsHasMore}
+            isLoadingMoreProducts={isLoadingMoreProducts}
           />
 
           <div className="flex justify-end gap-3">

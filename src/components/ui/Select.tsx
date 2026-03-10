@@ -6,21 +6,57 @@ import {
   useEffect,
   KeyboardEvent,
 } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Search, X, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-interface Option {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export interface SelectOption {
   value: string | number;
   label: string;
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  options: Option[];
-  searchPlaceholder?: string;
-  onSearchChange?: (search: string) => void;
-}
+/**
+ * Discriminated union for pagination.
+ *
+ * Branch A — paginated Select (onLoadMore + hasMore are BOTH required):
+ *   <Select onLoadMore={fn} hasMore={bool} ... />
+ *
+ * Branch B — static Select (none of the three props allowed):
+ *   <Select options={[...]} ... />        ← compiles; no pagination props
+ *
+ * TypeScript enforces this at every call-site via the `never` guard.
+ */
+type PaginationProps =
+  | {
+      /** Called when the user scrolls near the bottom of the list. */
+      onLoadMore: () => void;
+      /** Whether more pages are available from the server. */
+      hasMore: boolean;
+      /** Shows a spinner row while the next page is loading. */
+      isLoadingMore?: boolean;
+    }
+  | {
+      onLoadMore?: never;
+      hasMore?: never;
+      isLoadingMore?: never;
+    };
+
+/**
+ * We use `type` (intersection) instead of `interface extends` because
+ * TypeScript does not allow an interface to extend a union type.
+ */
+export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
+  PaginationProps & {
+    label?: string;
+    error?: string;
+    options: SelectOption[];
+    searchPlaceholder?: string;
+    /** Called on every keystroke inside the search box (debounce in parent). */
+    onSearchChange?: (search: string) => void;
+  };
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
@@ -29,28 +65,45 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       label,
       error,
       options,
-      // placeholder = "Select...",
       disabled,
       required,
       searchPlaceholder = "Search...",
-      // Destructure RHF register() props explicitly
       name,
       onChange,
       onBlur,
       value: valueProp,
       defaultValue,
       onSearchChange,
+      // Pagination
+      onLoadMore,
+      hasMore,
+      isLoadingMore = false,
       ...rest
     },
     ref,
   ) => {
     const { t } = useTranslation("common");
-    // ─── Internal UI state ──────────────────────────────────────────────────
+
+    // ─── Internal UI state ────────────────────────────────────────────────────
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [internalValue, setInternalValue] = useState<string | number>(
       (valueProp ?? defaultValue ?? "") as string | number,
+    );
+    /**
+     * Tracks whether a server-side search is pending between the moment the
+     * user types (onSearchChange called) and the moment the parent's new
+     * `options` prop arrives.  This closes the timing gap where:
+     *  - the 300ms debounce hasn't even fired yet, or
+     *  - the API call is in-flight but isLoadingMore is still false.
+     *
+     * Starts as `true` when onLoadMore is defined so the very first open
+     * (before the initial page load delivers options) also shows a spinner.
+     */
+    const [isSearchPending, setIsSearchPending] = useState(
+      // If server-driven, we're immediately "pending" until first options arrive
+      () => !!onLoadMore,
     );
 
     // Sync when RHF resets or patches the value externally
@@ -59,8 +112,19 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         setInternalValue(valueProp as string | number);
     }, [valueProp]);
 
-    // ─── Refs ───────────────────────────────────────────────────────────────
+    // Any update to options means the parent responded — no longer pending
+    useEffect(() => {
+      setIsSearchPending(false);
+    }, [options]);
+
+    // ─── Refs ─────────────────────────────────────────────────────────────────
     const hiddenSelectRef = useRef<HTMLSelectElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+    /** Invisible sentinel element — IntersectionObserver watches this to trigger pagination. */
+    const sentinelRef = useRef<HTMLLIElement>(null);
 
     /**
      * Merge the forwarded ref (from register()) with our internal ref.
@@ -75,31 +139,24 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         (ref as React.MutableRefObject<HTMLSelectElement | null>).current = el;
     };
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const searchRef = useRef<HTMLInputElement>(null);
-    const listRef = useRef<HTMLUListElement>(null);
-
-    // ─── Derived ────────────────────────────────────────────────────────────
+    // ─── Derived ──────────────────────────────────────────────────────────────
     const selectedOption = options.find(
       (o) => String(o.value) === String(internalValue),
     );
-    const filtered = search.trim()
-      ? options.filter((o) =>
-          o.label.toLowerCase().includes(search.toLowerCase()),
-        )
-      : options;
-
-    // ─── Core: fire a native change event on the hidden <select> ────────────
     /**
-     * react-hook-form registers on the native <select> via onChange.
-     * When the user picks an option in our custom UI, we:
-     *  1. Update React state so the trigger label re-renders.
-     *  2. Set the hidden select's .value via the native setter (bypassing
-     *     React's synthetic value lock).
-     *  3. Dispatch a native "change" event — this bubbles up and triggers
-     *     the onChange RHF bound to the hidden element.
+     * When `onSearchChange` is provided the parent filters server-side, so we
+     * display the `options` array as-is (parent already filtered).
+     * Without it we do local client-side filtering.
      */
+    const filtered = onSearchChange
+      ? options
+      : search.trim()
+        ? options.filter((o) =>
+            o.label.toLowerCase().includes(search.toLowerCase()),
+          )
+        : options;
+
+    // ─── Core: fire a native change event on the hidden <select> ─────────────
     const fireNativeChange = (newValue: string | number) => {
       const el = hiddenSelectRef.current;
       if (!el) return;
@@ -111,7 +168,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       el.dispatchEvent(new Event("change", { bubbles: true }));
     };
 
-    const selectOption = (option: Option) => {
+    const selectOption = (option: SelectOption) => {
       setInternalValue(option.value);
       fireNativeChange(option.value);
       setIsOpen(false);
@@ -126,7 +183,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       setSearch("");
     };
 
-    // ─── Side-effects ────────────────────────────────────────────────────────
+    // ─── Side-effects ─────────────────────────────────────────────────────────
+    // Close on outside click
     useEffect(() => {
       const handler = (e: MouseEvent) => {
         if (
@@ -136,7 +194,6 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           if (isOpen) {
             setIsOpen(false);
             setSearch("");
-            // Tell RHF the field was touched/blurred
             hiddenSelectRef.current?.dispatchEvent(
               new Event("blur", { bubbles: true }),
             );
@@ -147,6 +204,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       return () => document.removeEventListener("mousedown", handler);
     }, [isOpen]);
 
+    // Focus search input when opening
     useEffect(() => {
       if (isOpen) {
         setTimeout(() => searchRef.current?.focus(), 0);
@@ -154,6 +212,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       }
     }, [isOpen]);
 
+    // Keyboard scroll-into-view
     useEffect(() => {
       if (highlightedIndex >= 0 && listRef.current) {
         const el = listRef.current.children[highlightedIndex] as HTMLElement;
@@ -161,7 +220,30 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       }
     }, [highlightedIndex]);
 
-    // ─── Keyboard ────────────────────────────────────────────────────────────
+    // ─── IntersectionObserver — pagination sentinel ───────────────────────────
+    useEffect(() => {
+      // Only set up the observer when pagination is enabled
+      if (!onLoadMore) return;
+      const sentinel = sentinelRef.current;
+      if (!sentinel) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && hasMore && !isLoadingMore) {
+            onLoadMore();
+          }
+        },
+        {
+          root: listRef.current, // scroll container is the viewport
+          threshold: 0.1,
+        },
+      );
+
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }, [onLoadMore, hasMore, isLoadingMore, isOpen]);
+
+    // ─── Keyboard navigation ──────────────────────────────────────────────────
     const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
       if (disabled) return;
       switch (e.key) {
@@ -196,7 +278,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       }
     };
 
-    // ─── Render ──────────────────────────────────────────────────────────────
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
       <div
         className={`w-full relative ${className}`}
@@ -225,8 +307,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           value={String(internalValue)}
           required={required}
           disabled={disabled}
-          onChange={onChange} // ← RHF's onChange, called by fireNativeChange()
-          onBlur={onBlur} // ← RHF's onBlur, called on outside click
+          onChange={onChange}
+          onBlur={onBlur}
           tabIndex={-1}
           aria-hidden="true"
           className="sr-only"
@@ -271,8 +353,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 e.key,
               )
             ) {
-              // Don't preventDefault here, let it bubble for grid navigation
-              return;
+              return; // let it bubble for grid navigation
             }
           }}
         >
@@ -323,7 +404,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     const val = e.target.value;
                     setSearch(val);
                     setHighlightedIndex(-1);
-                    if (onSearchChange) onSearchChange(val);
+                    if (onSearchChange) {
+                      // Mark as pending immediately — before debounce fires
+                      setIsSearchPending(true);
+                      onSearchChange(val);
+                    }
                   }}
                   placeholder={searchPlaceholder}
                   className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-400 min-w-0"
@@ -343,14 +428,20 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </div>
             </div>
 
-            {/* Options */}
+            {/* Options list */}
             <ul
               ref={listRef}
               role="listbox"
               className="overflow-y-auto"
               style={{ maxHeight: "244px" }}
             >
-              {filtered.length === 0 ? (
+              {filtered.length === 0 && (isLoadingMore || isSearchPending) ? (
+                // Loading: initial fetch OR debounce window OR API in-flight
+                <li className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-gray-400">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{t("loading") ?? "Loading…"}</span>
+                </li>
+              ) : filtered.length === 0 ? (
                 <li className="px-3 py-6 text-sm text-gray-400 text-center">
                   {t("no_results_found")}
                 </li>
@@ -375,7 +466,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                             : "text-gray-700 hover:bg-gray-50",
                       ].join(" ")}
                     >
-                      {search.trim() ? (
+                      {/* Local highlight only when NOT doing server-side search */}
+                      {search.trim() && !onSearchChange ? (
                         <HighlightMatch
                           text={opt.label}
                           query={search}
@@ -388,11 +480,39 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                   );
                 })
               )}
+
+              {/*
+               * ── Pagination sentinel ──────────────────────────────────────
+               * Invisible <li> at the very end of the list.
+               * IntersectionObserver fires `onLoadMore` when it scrolls into view.
+               */}
+              {onLoadMore && (
+                <li ref={sentinelRef} aria-hidden="true" className="h-1" />
+              )}
+
+              {/* Spinner row while loading next page */}
+              {isLoadingMore && (
+                <li className="flex items-center justify-center gap-2 px-3 py-3 text-sm text-gray-400">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>{t("loading") ?? "Loading…"}</span>
+                </li>
+              )}
+
+              {/* "All results loaded" hint */}
+              {onLoadMore && !hasMore && filtered.length > 0 && (
+                <li className="px-3 py-2 text-xs text-gray-300 text-center border-t border-gray-50">
+                  {t("all_results_loaded") ?? "All results loaded"}
+                </li>
+              )}
             </ul>
 
+            {/* Footer count */}
             {filtered.length > 0 && (
               <div className="px-3 py-1.5 border-t border-gray-100 bg-gray-50 text-xs text-gray-400">
-                {filtered.length} {t("of")} {options.length} {t("options")}
+                {filtered.length} {t("options")}
+                {onLoadMore &&
+                  hasMore &&
+                  ` · ${t("scroll_for_more") ?? "scroll for more"}`}
               </div>
             )}
           </div>
@@ -403,6 +523,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     );
   },
 );
+
+// ─── HighlightMatch ───────────────────────────────────────────────────────────
 
 function HighlightMatch({
   text,
@@ -432,48 +554,3 @@ function HighlightMatch({
 
 Select.displayName = "Select";
 export default Select;
-
-// import { SelectHTMLAttributes, forwardRef } from "react";
-
-// interface Option {
-//   value: string | number;
-//   label: string;
-// }
-
-// interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-//   label?: string;
-//   error?: string;
-//   options: Option[];
-// }
-
-// const Select = forwardRef<HTMLSelectElement, SelectProps>(
-//   ({ className = "", label, error, options, ...props }, ref) => {
-//     return (
-//       <div className="w-full">
-//         {label && (
-//           <label className="block text-sm font-medium text-gray-700 mb-1">
-//             {label}
-//           </label>
-//         )}
-//         <select
-//           ref={ref}
-//           className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white ${
-//             error ? "border-red-500" : "border-gray-300"
-//           } ${className}`}
-//           {...props}
-//         >
-//           <option value="">Select...</option>
-//           {options.map((opt) => (
-//             <option key={opt.value} value={opt.value}>
-//               {opt.label}
-//             </option>
-//           ))}
-//         </select>
-//         {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-//       </div>
-//     );
-//   },
-// );
-
-// Select.displayName = "Select";
-// export default Select;

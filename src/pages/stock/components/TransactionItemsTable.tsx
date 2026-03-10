@@ -15,12 +15,21 @@ interface TransactionItemsTableProps {
   products: ProductDto[];
   setProducts: React.Dispatch<React.SetStateAction<ProductDto[]>>;
   debouncedFetchProducts: (search: string) => void;
+  /** Called when the user scrolls to the bottom of the product dropdown. */
+  onLoadMoreProducts: () => void;
+  /** Whether more product pages are available on the server. */
+  productsHasMore: boolean;
+  /** True while the next page of products is in-flight. */
+  isLoadingMoreProducts: boolean;
 }
 
 export default function TransactionItemsTable({
   products,
   setProducts,
   debouncedFetchProducts,
+  onLoadMoreProducts,
+  productsHasMore,
+  isLoadingMoreProducts,
 }: TransactionItemsTableProps) {
   const { t, i18n } = useTranslation("stock");
   const isRtl = i18n.dir() === "rtl";
@@ -160,6 +169,10 @@ export default function TransactionItemsTable({
               }))}
               searchPlaceholder={t("search_product") || "Search by name"}
               onSearchChange={debouncedFetchProducts}
+              // ── Pagination ──────────────────────────────────────────────
+              onLoadMore={onLoadMoreProducts}
+              hasMore={productsHasMore}
+              isLoadingMore={isLoadingMoreProducts}
               onChange={(e) => {
                 const prod = products.find((p) => p.oid === e.target.value);
                 if (prod) {
@@ -234,6 +247,10 @@ export default function TransactionItemsTable({
                 products={products}
                 setProducts={setProducts}
                 debouncedFetchProducts={debouncedFetchProducts}
+                // ── Pagination ────────────────────────────────────────────
+                onLoadMoreProducts={onLoadMoreProducts}
+                productsHasMore={productsHasMore}
+                isLoadingMoreProducts={isLoadingMoreProducts}
               />
             ))}
           </tbody>
