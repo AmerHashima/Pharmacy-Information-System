@@ -120,6 +120,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     // ─── Keyboard navigation ──────────────────────────────────────────────────
     const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
       if (disabled) return;
+
+      // When the search input is focused, Space must type — not activate selection.
+      // All other keys (ArrowUp/Down, Enter, Escape, Tab) still work as expected.
+      if (isOpen && e.key === " " && e.target === searchRef.current) return;
+
       switch (e.key) {
         case "Enter":
         case " ":
