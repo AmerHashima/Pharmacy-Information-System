@@ -2,13 +2,12 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { productService } from "@/api/productService";
-import { branchService } from "@/api/branchService";
 import { salesService } from "@/api/salesService";
 import { lookupService } from "@/api/lookupService";
 import { handleApiError } from "@/utils/handleApiError";
+import { usePaginatedBranches } from "@/hooks/queries";
 import {
   ProductDto,
-  BranchDto,
   AppLookupDetailDto,
   CreateSalesInvoiceDto,
   FilterOperation,
@@ -38,12 +37,14 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
 
-  // Branches — paginated
-  const [branches, setBranches] = useState<BranchDto[]>([]);
-  const [branchesPage, setBranchesPage] = useState(1);
-  const [branchesHasMore, setBranchesHasMore] = useState(false);
-  const [isLoadingMoreBranches, setIsLoadingMoreBranches] = useState(false);
-  const currentBranchSearchRef = useRef<string>("");
+  // ── Branches — paginated + TanStack Query cached ──────────────────────────
+  const {
+    options: branches,
+    setSearch: handleBranchSearch,
+    loadMore: handleLoadMoreBranches,
+    hasMore: branchesHasMore,
+    isLoadingMore: isLoadingMoreBranches,
+  } = usePaginatedBranches();
 
   const [paymentMethods, setPaymentMethods] = useState<AppLookupDetailDto[]>(
     [],
@@ -72,80 +73,28 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const [isDataLoading, setIsDataLoading] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Paginated branch fetch ──────────────────────────────────────────────
-  const fetchBranches = useCallback(
-    async (search: string, page: number, replace: boolean) => {
-      setIsLoadingMoreBranches(true);
-      try {
-        const res = await branchService.query({
-          request: {
-            filters: search.trim()
-              ? [
-                  new FilterRequest(
-                    "branchName",
-                    search,
-                    FilterOperation.Contains,
-                  ),
-                ]
-              : [],
-            sort: [],
-            pagination: { pageNumber: page, pageSize: BRANCHES_PAGE_SIZE },
-          },
-        });
-        const fetched = res.data.data?.data || [];
-        const hasNext = res.data.data?.hasNextPage ?? false;
-        setBranches((prev) =>
-          replace
-            ? fetched
-            : [
-                ...prev,
-                ...fetched.filter((f) => !prev.find((p) => p.oid === f.oid)),
-              ],
-        );
-        setBranchesHasMore(hasNext);
-        setBranchesPage(page);
-      } catch (err) {
-        console.error("Branch fetch failed", err);
-      } finally {
-        setIsLoadingMoreBranches(false);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    },
-    [],
-  );
-
-  // Initial Fetch: Branches, Payment Methods
+  // ── Payment methods (lookup — runs once, kept as-is) ─────────────────────
   useEffect(() => {
     const fetchInitialData = async () => {
-      setIsDataLoading(true);
       try {
-        await fetchBranches("", 1, true);
-
         const lRes = await lookupService.getByCode("PAYMENT_METHOD");
         const methods = lRes.data.data?.lookupDetails || [];
         setPaymentMethods(methods);
-
-        // Default to Cash
         const cashMethod = methods.find(
           (m) =>
             m.lookupDetailCode?.toLowerCase() === "cash" ||
             m.valueNameEn?.toLowerCase() === "cash",
         );
-        if (cashMethod) {
-          setSelectedPaymentMethodId(cashMethod.oid);
-        } else if (methods.length > 0) {
-          setSelectedPaymentMethodId(methods[0].oid);
-        }
+        if (cashMethod) setSelectedPaymentMethodId(cashMethod.oid);
+        else if (methods.length > 0) setSelectedPaymentMethodId(methods[0].oid);
       } catch (err) {
-        console.error("Failed to fetch initial data", err);
-      } finally {
-        setIsDataLoading(false);
+        console.error("Failed to fetch payment methods", err);
       }
     };
     fetchInitialData();
   }, []);
 
-  // Debounced Product Search by name
+  // ── Debounced Product Search (TanStack cached) ──────────────────────────
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (!search.trim()) {
@@ -175,23 +124,8 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Debounced Branch Search (resets to page 1)
-  const handleBranchSearch = useMemo(() => {
-    let timer: any;
-    return (val: string) => {
-      currentBranchSearchRef.current = val;
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        fetchBranches(val, 1, true);
-      }, 400);
-    };
-  }, [fetchBranches]);
-
-  // Load next page of branches
-  const handleLoadMoreBranches = useCallback(() => {
-    if (!branchesHasMore || isLoadingMoreBranches) return;
-    fetchBranches(currentBranchSearchRef.current, branchesPage + 1, false);
-  }, [fetchBranches, branchesHasMore, isLoadingMoreBranches, branchesPage]);
+  // ── Debounced Branch Search — delegates to hook ──────────────────────────
+  // (handleBranchSearch and handleLoadMoreBranches come from usePaginatedBranches)
 
   // QR/Barcode scan handler
   const handleBarcodeScan = async (barcode: string) => {

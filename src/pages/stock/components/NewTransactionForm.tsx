@@ -1,53 +1,31 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
 import { Save } from "lucide-react";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
 
 import Button from "@/components/ui/Button";
 import { useLookup } from "@/context/LookupContext";
-import { branchService } from "@/api/branchService";
 import { stakeholderService } from "@/api/stakeholderService";
-import { productService } from "@/api/productService";
 import { stockService } from "@/api/stockService";
 import {
-  BranchDto,
   StakeholderDto,
-  ProductDto,
   CreateStockTransactionDto,
   FilterOperation,
 } from "@/types";
+import { usePaginatedProducts, useBranches, queryKeys } from "@/hooks/queries";
 
 import TransactionGeneralInfo from "./TransactionGeneralInfo";
 import TransactionItemsTable from "./TransactionItemsTable";
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const PRODUCTS_PAGE_SIZE = 20;
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function NewTransactionForm() {
   const { t, i18n } = useTranslation("stock");
   const { getLookupDetails } = useLookup();
-
-  const [branches, setBranches] = useState<BranchDto[]>([]);
-  const [suppliers, setSuppliers] = useState<StakeholderDto[]>([]);
-
-  // Products — paginated list
-  const [products, setProducts] = useState<ProductDto[]>([]);
-  const [productsPage, setProductsPage] = useState(1);
-  const [productsHasMore, setProductsHasMore] = useState(false);
-  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Track latest search term so `loadMore` can use the same filter
-  const currentSearchRef = useRef<string | undefined>(undefined);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
-
   const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
 
   // ─── Schema ───────────────────────────────────────────────────────────────
@@ -88,134 +66,57 @@ export default function NewTransactionForm() {
   const { handleSubmit, watch, reset, getValues } = methods;
 
   const selectedTypeId = watch("transactionTypeId");
-  const selectedType = transactionTypes.find(
-    (type) => type.oid === selectedTypeId,
-  );
+  const selectedType = transactionTypes.find((t) => t.oid === selectedTypeId);
   const typeCode = selectedType?.oid;
 
-  // ─── Products fetching ───────────────────────────────────────────────────
+  // ─── Products — paginated + cached via TanStack Query ────────────────────
+  //
+  // We pass the currently-selected productIds so the hook can preserve them
+  // even when a new search replaces the visible page.
 
-  /**
-   * Core fetch function.
-   * @param search  - filter string (undefined = no filter)
-   * @param page    - which page to load
-   * @param replace - true = replace the list (new search), false = append (load more)
-   */
-  const fetchProducts = async (
-    search: string | undefined,
-    page: number,
-    replace: boolean,
-  ) => {
-    setIsLoadingMoreProducts(true);
-    try {
-      const res = await productService.query({
-        request: {
-          pagination: { pageNumber: page, pageSize: PRODUCTS_PAGE_SIZE },
-          filters: search
-            ? [{ propertyName: "drugName", value: search, operation: 2 }]
-            : [],
-        },
-      });
+  const selectedProductIds = (getValues("details") || [])
+    .map((d) => d.productId)
+    .filter(Boolean);
 
-      if (res.data.success && res.data.data) {
-        const fetched: ProductDto[] = res.data.data.data;
-        // PagedResult exposes hasNextPage directly — no manual count math needed
-        const hasNext: boolean = res.data.data.hasNextPage;
+  const {
+    options: products,
+    setOptions: setProducts,
+    setSearch: debouncedFetchProducts,
+    loadMore: handleLoadMoreProducts,
+    hasMore: productsHasMore,
+    isLoadingMore: isLoadingMoreProducts,
+  } = usePaginatedProducts({ preserveIds: selectedProductIds });
 
-        setProducts((prev) => {
-          // Always preserve currently-selected products so their labels don't vanish
-          const currentDetails = getValues("details") || [];
-          const selectedIds = currentDetails
-            .map((d) => d.productId)
-            .filter(Boolean);
-          const selectedProducts = prev.filter((p) =>
-            selectedIds.includes(p.oid),
-          );
+  // ─── Branches — static list cached for 10 min ────────────────────────────
 
-          if (replace) {
-            // Start fresh, but keep selected products at the back
-            const merged = [...fetched];
-            selectedProducts.forEach((sp) => {
-              if (!merged.find((m) => m.oid === sp.oid)) merged.push(sp);
-            });
-            return merged;
-          } else {
-            // Append new page, deduplicate
-            const merged = [...prev];
-            fetched.forEach((p) => {
-              if (!merged.find((m) => m.oid === p.oid)) merged.push(p);
-            });
-            return merged;
-          }
-        });
+  const { data: branches = [] } = useBranches();
 
-        setProductsHasMore(hasNext);
-        setProductsPage(page);
-      }
-    } catch (err) {
-      console.error("Failed to fetch products", err);
-    } finally {
-      setIsLoadingMoreProducts(false);
-    }
-  };
+  // ─── Suppliers — static vendor list cached for 10 min ────────────────────
 
-  /** Called by the Select's onSearchChange (debounced by us). Resets to page 1. */
-  const debouncedFetchProducts = (search: string) => {
-    currentSearchRef.current = search || undefined;
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      fetchProducts(currentSearchRef.current, 1, true);
-    }, 300);
-  };
+  const { data: suppliers = [] } = useQuery({
+    queryKey: queryKeys.stakeholders.vendors(),
+    queryFn: () =>
+      stakeholderService
+        .query({
+          request: {
+            pagination: { getAll: true, pageNumber: 1, pageSize: 100 },
+            filters: [
+              {
+                propertyName: "StakeholderTypeCode",
+                value: "VENDOR",
+                operation: FilterOperation.Equals,
+              },
+            ],
+            sort: [{ sortBy: "name", sortDirection: "asc" }],
+          },
+        })
+        .then((res) => (res.data.data?.data ?? []) as StakeholderDto[]),
+    staleTime: 1000 * 60 * 10,
+  });
 
-  /** Called by the Select's onLoadMore when the user scrolls to the bottom. */
-  const handleLoadMoreProducts = () => {
-    if (!productsHasMore || isLoadingMoreProducts) return;
-    fetchProducts(currentSearchRef.current, productsPage + 1, false);
-  };
+  // ─── Submission ───────────────────────────────────────────────────────────
 
-  // ─── Initial data load ───────────────────────────────────────────────────
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [bRes, sRes] = await Promise.all([
-          branchService.query({
-            request: {
-              pagination: { getAll: true, pageNumber: 1, pageSize: 100 },
-              sort: [{ sortBy: "branchName", sortDirection: "asc" }],
-            },
-          }),
-          stakeholderService.query({
-            request: {
-              pagination: { getAll: true, pageNumber: 1, pageSize: 100 },
-              filters: [
-                {
-                  propertyName: "StakeholderTypeCode",
-                  value: "VENDOR",
-                  operation: FilterOperation.Equals,
-                },
-              ],
-              sort: [{ sortBy: "name", sortDirection: "asc" }],
-            },
-          }),
-        ]);
-        if (bRes.data.success && bRes.data.data)
-          setBranches(bRes.data.data.data);
-        if (sRes.data.success && sRes.data.data)
-          setSuppliers(sRes.data.data.data);
-
-        // Load first page of products
-        await fetchProducts(undefined, 1, true);
-      } catch (err) {
-        console.error("Failed to fetch dependencies", err);
-      }
-    };
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ─── Submit ───────────────────────────────────────────────────────────────
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -229,7 +130,6 @@ export default function NewTransactionForm() {
           totalCost: d.quantity * d.unitCost,
         })),
       };
-
       const res = await stockService.createStockTransaction(dto);
       if (res.data.success) {
         toast.success(t("transaction_created_success"));
@@ -244,23 +144,6 @@ export default function NewTransactionForm() {
     }
   };
 
-  // ─── Options helpers ──────────────────────────────────────────────────────
-
-  const getBranchOptions = () =>
-    branches.map((b) => ({ value: b.oid, label: b.branchName }));
-
-  const getSupplierOptions = () =>
-    suppliers.map((s) => ({ value: s.oid, label: s.name }));
-
-  const getTransactionTypeOptions = () =>
-    transactionTypes.map((t) => ({
-      value: t.oid,
-      label:
-        i18n.language === "ar"
-          ? t.valueNameAr || t.valueNameEn || ""
-          : t.valueNameEn || "",
-    }));
-
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -269,16 +152,27 @@ export default function NewTransactionForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <TransactionGeneralInfo
             typeCode={typeCode || ""}
-            transactionTypeOptions={getTransactionTypeOptions()}
-            branchOptions={getBranchOptions()}
-            supplierOptions={getSupplierOptions()}
+            transactionTypeOptions={transactionTypes.map((tx) => ({
+              value: tx.oid,
+              label:
+                i18n.language === "ar"
+                  ? tx.valueNameAr || tx.valueNameEn || ""
+                  : tx.valueNameEn || "",
+            }))}
+            branchOptions={branches.map((b) => ({
+              value: b.oid,
+              label: b.branchName,
+            }))}
+            supplierOptions={suppliers.map((s) => ({
+              value: s.oid,
+              label: s.name,
+            }))}
           />
 
           <TransactionItemsTable
             products={products}
             setProducts={setProducts}
             debouncedFetchProducts={debouncedFetchProducts}
-            // ── Pagination props ──────────────────────────────────────────
             onLoadMoreProducts={handleLoadMoreProducts}
             productsHasMore={productsHasMore}
             isLoadingMoreProducts={isLoadingMoreProducts}
