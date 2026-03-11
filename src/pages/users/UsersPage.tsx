@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Users as UsersIcon,
   Edit2,
@@ -21,48 +21,44 @@ import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import UserForm from "./UserForm";
 import { systemUserService } from "@/api/systemUserService";
-import { useQueryTable } from "@/hooks/useQuery";
 import { handleApiError } from "@/utils/handleApiError";
-import { SystemUserDto, FilterOperation } from "@/types";
+import { SystemUserDto } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePaginatedUsers } from "@/hooks/queries/useUsers";
+import { queryKeys } from "@/hooks/queries/queryKeys";
 
 export default function UsersPage() {
   const { t } = useTranslation("users");
   const tc = useTranslation("common").t;
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SystemUserDto | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  const {
-    data,
-    isLoading,
-    pageNumber,
-    setPageNumber,
-    totalPages,
-    totalRecords,
-    fetch,
-  } = useQueryTable<SystemUserDto>({
-    service: systemUserService.query,
-    pageSize: 10,
-  });
-
-  const loadData = useCallback(() => {
-    const filters = searchTerm
-      ? [
-          {
-            propertyName: "fullName",
-            value: searchTerm,
-            operation: FilterOperation.Contains,
-          },
-        ]
-      : [];
-    fetch("", filters);
-  }, [fetch, searchTerm]);
-
+  // Debounce search term to avoid excessive API calls
   useEffect(() => {
-    loadData();
-  }, [loadData, pageNumber]);
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Only reset to page 1 if search term actually changed and is not first render
+      if (debouncedSearchTerm !== searchTerm) {
+        setPageNumber(1);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm, debouncedSearchTerm]);
+
+  const { data: pagedData, isLoading } = usePaginatedUsers(
+    pageNumber,
+    debouncedSearchTerm,
+  );
+
+  const data = pagedData?.data || [];
+  const totalPages = pagedData?.totalPages || 1;
+  const totalRecords = pagedData?.totalRecords || 0;
 
   const handleCreateOrUpdate = async (formData: any) => {
     setIsActionLoading(true);
@@ -75,7 +71,7 @@ export default function UsersPage() {
         toast.success(t("userCreated"));
       }
       setIsFormOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -90,7 +86,7 @@ export default function UsersPage() {
       await systemUserService.delete(selectedUser.oid);
       toast.success(t("userDeleted"));
       setIsDeleteOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     } catch (err) {
       handleApiError(err);
     } finally {

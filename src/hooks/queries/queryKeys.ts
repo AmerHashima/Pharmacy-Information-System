@@ -27,4 +27,10 @@ export const queryKeys = {
     all: ["stakeholders"] as const,
     vendors: () => ["stakeholders", "vendors"] as const,
   },
+
+  users: {
+    all: ["users"] as const,
+    list: (page: number, search: string) =>
+      ["users", "list", page, search] as const,
+  },
 };
