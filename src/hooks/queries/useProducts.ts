@@ -78,3 +78,45 @@ export function useProductSearch(search: string) {
     placeholderData: (prev) => prev,
   });
 }
+
+/**
+ * Paginated products hook for the Products table.
+ */
+export function usePaginatedProducts(
+  page: number,
+  search: string,
+  dosageFormId?: string,
+) {
+  return useQuery({
+    queryKey: queryKeys.products.paginated(page, search, dosageFormId),
+    queryFn: () => {
+      const filters = [];
+      if (search.trim()) {
+        filters.push({
+          propertyName: "drugName",
+          value: search,
+          operation: FilterOperation.Contains,
+        });
+      }
+      if (dosageFormId) {
+        filters.push({
+          propertyName: "dosageFormId",
+          value: dosageFormId,
+          operation: FilterOperation.Equals,
+        });
+      }
+
+      return productService
+        .query({
+          request: {
+            filters,
+            sort: [],
+            pagination: { pageNumber: page, pageSize: 10 },
+          },
+        })
+        .then((res) => res.data.data!);
+    },
+    staleTime: 1000 * 60 * 5, // 5 min
+    placeholderData: (prev) => prev,
+  });
+}

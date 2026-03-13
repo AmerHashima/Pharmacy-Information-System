@@ -22,10 +22,12 @@ import Select from "@/components/ui/Select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ProductForm from "./ProductForm";
 import { productService } from "@/api/productService";
-import { useQueryTable } from "@/hooks/useQuery";
+import { usePaginatedProducts } from "@/hooks/queries/useProducts";
+import { queryKeys } from "@/hooks/queries/queryKeys";
+import { useQueryClient } from "@tanstack/react-query";
 import { handleApiError } from "@/utils/handleApiError";
 import { useLookup } from "@/context/LookupContext";
-import { ProductDto, CreateProductDto, FilterOperation } from "@/types";
+import { ProductDto, CreateProductDto } from "@/types";
 
 export default function ProductsPage() {
   const { t, i18n } = useTranslation("products");
@@ -41,42 +43,18 @@ export default function ProductsPage() {
     null,
   );
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
+  const [pageNumber, setPageNumber] = useState(1);
+  const { data: pagedData, isLoading } = usePaginatedProducts(
     pageNumber,
-    setPageNumber,
-    totalPages,
-    totalRecords,
-    fetch,
-  } = useQueryTable<ProductDto>({
-    service: productService.query,
-    pageSize: 10,
-  });
+    searchTerm,
+    dosageFormId,
+  );
 
-  const loadData = useCallback(() => {
-    const filters = [];
-    if (searchTerm) {
-      filters.push({
-        propertyName: "drugName",
-        value: searchTerm,
-        operation: FilterOperation.Contains,
-      });
-    }
-    if (dosageFormId) {
-      filters.push({
-        propertyName: "dosageFormId",
-        value: dosageFormId,
-        operation: FilterOperation.Equals,
-      });
-    }
-    fetch("", filters);
-  }, [fetch, searchTerm, dosageFormId]);
-
-  // useEffect(() => {
-  //   loadData();
-  // }, [loadData, pageNumber]);
+  const data = pagedData?.data ?? [];
+  const totalPages = pagedData?.totalPages ?? 0;
+  const totalRecords = pagedData?.totalRecords ?? 0;
 
   const handleCreateOrUpdate = async (formData: CreateProductDto) => {
     setIsActionLoading(true);
@@ -92,7 +70,7 @@ export default function ProductsPage() {
         toast.success(t("productCreated"));
       }
       setIsFormOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -107,7 +85,7 @@ export default function ProductsPage() {
       await productService.delete(selectedProduct.oid);
       toast.success(t("productDeleted"));
       setIsDeleteOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -125,16 +103,9 @@ export default function ProductsPage() {
 
     if (filtersChanged) {
       prevFiltersRef.current = { searchTerm, dosageFormId };
-
-      // reset to 1 once, and wait for pageNumber effect re-run
-      if (pageNumber !== 1) {
-        setPageNumber(1);
-        return;
-      }
+      setPageNumber(1);
     }
-
-    loadData();
-  }, [searchTerm, dosageFormId, pageNumber, setPageNumber, loadData]);
+  }, [searchTerm, dosageFormId]);
 
   // ✅ memoized handlers (prevents SearchBar effects from re-firing)
   const handleSearch = useCallback((value: string) => {

@@ -13,6 +13,9 @@ export const queryKeys = {
     all: ["products"] as const,
     /** Paginated + optionally filtered list */
     list: (search: string) => ["products", "list", search] as const,
+    /** Paginated with full filters (page, search, category, etc) */
+    paginated: (page: number, search: string, dosageFormId?: string) =>
+      ["products", "paginated", page, search, dosageFormId] as const,
   },
 
   branches: {
