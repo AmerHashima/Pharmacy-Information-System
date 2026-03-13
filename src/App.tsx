@@ -20,7 +20,6 @@ import LookupDetailPage from "@/pages/lookups/LookupDetailPage";
 import RSDPage from "@/pages/rsd/RSDPage";
 import IntegrationProvidersPage from "@/pages/integrations/IntegrationProvidersPage";
 import BranchIntegrationsPage from "@/pages/integrations/BranchIntegrationsPage";
-import RsdLogsPage from "@/pages/rsd/RsdLogsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -29,6 +28,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 import { LookupProvider } from "@/context/LookupContext";
 import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
+import RsdLogsPage from "./pages/rsd/RsdLogsPage";
 
 const queryClient = new QueryClient();
 
