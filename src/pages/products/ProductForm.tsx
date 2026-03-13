@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Info, Package, ShieldCheck, Database, Layers } from "lucide-react";
+import { Info, ShieldCheck, Database, Layers } from "lucide-react";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import { useTranslation } from "react-i18next";
 import { ProductDto, CreateProductDto, AppLookupDetailDto } from "@/types";
 import { lookupService } from "@/api/lookupService";
-import { positiveNumberInputProps } from "@/utils/positiveNumberInputProps";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import arLocale from "i18n-iso-countries/langs/ar.json";
+import { getProductSchema, ProductFormValues } from "./schema";
+
+// Tab Components
+import BasicInfoTab from "./components/BasicInfoTab";
+import StrengthPackagingTab from "./components/StrengthPackagingTab";
+import RegulatoryTab from "./components/RegulatoryTab";
+import StockLevelsTab from "./components/StockLevelsTab";
 
 countries.registerLocale(enLocale);
 countries.registerLocale(arLocale);
@@ -31,49 +34,16 @@ export default function ProductForm({
   const { t, i18n } = useTranslation("products");
   const tc = useTranslation("common").t;
 
-  const productSchema = z.object({
-    drugName: z.string().min(1, t("drugNameRequired")).max(200),
-    gtin: z.string().optional(),
-    barcode: z.string().optional(),
-    drugNameAr: z.string().optional(),
-    genericName: z.string().optional(),
-    productTypeId: z.string().optional(),
-    strengthValue: z.string().optional(),
-    strengthUnit: z.string().optional(),
-    packageType: z.string().optional(),
-    packageSize: z.string().optional(),
-    price: z.coerce.number().min(0).optional(),
-    registrationNumber: z.string().optional(),
-    volume: z.coerce.number().optional(),
-    unitOfVolume: z.string().optional(),
-    manufacturer: z.string().optional(),
-    countryOfOrigin: z.string().optional(),
-    minStockLevel: z.coerce.number().optional(),
-    maxStockLevel: z.coerce.number().optional(),
-    isExportable: z.boolean().default(false),
-    isImportable: z.boolean().default(false),
-    drugStatus: z.string().optional(),
-    marketingStatus: z.string().optional(),
-    legalStatus: z.string().optional(),
-    vatTypeId: z.string().optional(),
-    packageTypeId: z.string().optional(),
-    dosageFormId: z.string().optional(),
-    productGroupId: z.string().optional(),
-    status: z.coerce.number().default(1),
-  });
-
-  type ProductFormValues = z.infer<typeof productSchema>;
-
   const [activeTab, setActiveTab] = useState<
     "basic" | "strength" | "regulatory" | "stock"
   >("basic");
+
   const [productTypes, setProductTypes] = useState<AppLookupDetailDto[]>([]);
   const [vatTypes, setVatTypes] = useState<AppLookupDetailDto[]>([]);
   const [packageTypeLookups, setPackageTypeLookups] = useState<
     AppLookupDetailDto[]
   >([]);
   const [dosageForms, setDosageForms] = useState<AppLookupDetailDto[]>([]);
-  const [productGroups, setProductGroups] = useState<AppLookupDetailDto[]>([]);
 
   const {
     register,
@@ -81,7 +51,7 @@ export default function ProductForm({
     reset,
     formState: { errors },
   } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(getProductSchema(t)),
     defaultValues: {
       status: 1,
       isExportable: false,
@@ -89,32 +59,20 @@ export default function ProductForm({
     },
   });
 
-  console.log("Form errors:", errors);
-
   useEffect(() => {
     const fetchLookups = async () => {
       try {
-        const [
-          ptRes,
-          vatRes,
-          pkgRes,
-
-          // doseRes, grpRes
-        ] = await Promise.all([
+        const [ptRes, pkgRes, doseRes] = await Promise.all([
           lookupService.getByCode("PRODUCT_TYPE"),
-          // lookupService.getByCode("VAT_TYPE").catch(() => null),
           lookupService.getByCode("PACKAGE_TYPE").catch(() => null),
           lookupService.getByCode("DOSAGE_FORM").catch(() => null),
-          // lookupService.getByCode("PRODUCT_GROUP").catch(() => null),
         ]);
         setProductTypes(ptRes.data.data?.lookupDetails || []);
-        if (vatRes) setVatTypes(vatRes.data.data?.lookupDetails || []);
         if (pkgRes)
           setPackageTypeLookups(pkgRes.data.data?.lookupDetails || []);
-        // if (doseRes) setDosageForms(doseRes.data.data?.lookupDetails || []);
-        // if (grpRes) setProductGroups(grpRes.data.data?.lookupDetails || []);
+        if (doseRes) setDosageForms(doseRes.data.data?.lookupDetails || []);
       } catch (err) {
-        console.error("Failed to fetch product types", err);
+        console.error("Failed to fetch lookups", err);
       }
     };
     fetchLookups();
@@ -134,31 +92,23 @@ export default function ProductForm({
       productTypeId: initialData.productTypeId
         ? String(initialData.productTypeId)
         : undefined,
-
       strengthValue: n(initialData.strengthValue),
       strengthUnit: n(initialData.strengthUnit),
       packageType: n(initialData.packageType),
       packageSize: n(initialData.packageSize),
-
       price: initialData.price ?? 0,
-
       registrationNumber: n(initialData.registrationNumber),
       volume: initialData.volume ?? 0,
       unitOfVolume: n(initialData.unitOfVolume),
-
       manufacturer: n(initialData.manufacturer),
       countryOfOrigin: n(initialData.countryOfOrigin),
-
       minStockLevel: initialData.minStockLevel ?? 0,
       maxStockLevel: initialData.maxStockLevel ?? 0,
-
       isExportable: !!initialData.isExportable,
       isImportable: !!initialData.isImportable,
-
       drugStatus: n(initialData.drugStatus),
       marketingStatus: n(initialData.marketingStatus),
       legalStatus: n(initialData.legalStatus),
-
       vatTypeId: initialData.vatTypeId
         ? String(initialData.vatTypeId)
         : undefined,
@@ -171,7 +121,6 @@ export default function ProductForm({
       productGroupId: initialData.productGroupId
         ? String(initialData.productGroupId)
         : undefined,
-
       status: initialData.status ?? 1,
     });
   }, [initialData, reset]);
@@ -183,15 +132,11 @@ export default function ProductForm({
     { id: "stock", label: t("stockLevels"), icon: Database },
   ];
 
-  const onInvalid = (errs: any) => {
-    console.log("INVALID SUBMIT:", errs);
-  };
-
   const currentLang = i18n.language === "ar" ? "ar" : "en";
   const countryOptions = Object.entries(
     countries.getNames(currentLang, { select: "official" }),
   ).map(([code, name]) => ({
-    value: name, // Keep name as value for compatibility with existing business logic if it expects the name
+    value: name,
     label: name,
     flag: code,
   }));
@@ -216,221 +161,37 @@ export default function ProductForm({
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {activeTab === "basic" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
-            <Input
-              {...register("drugName")}
-              label={t("drugName") + "*"}
-              placeholder="e.g. Panadol Extra"
-              error={errors.drugName?.message}
-              disabled={isLoading}
-            />
-            <Input
-              {...register("gtin")}
-              label={t("gtin")}
-              placeholder="Global Trade Item Number"
-              disabled={isLoading}
-            />
-            <Input
-              {...register("barcode")}
-              label={t("barcode")}
-              placeholder="Standard barcode"
-              disabled={isLoading}
-            />
-            <Input
-              {...register("genericName")}
-              label={t("genericName")}
-              placeholder="e.g. Paracetamol"
-              disabled={isLoading}
-            />
-            <Input
-              {...register("drugNameAr")}
-              label={t("drugNameAr")}
-              placeholder="اسم الدواء بالعربية"
-              disabled={isLoading}
-            />
-            <Select
-              {...register("productTypeId")}
-              label={t("productType")}
-              options={productTypes.map((pt) => ({
-                value: String(pt.oid),
-                label: pt.valueNameEn || pt.valueNameAr || "",
-              }))}
-              disabled={isLoading}
-            />
-            <Input
-              {...register("price")}
-              label={t("price")}
-              type="number"
-              {...positiveNumberInputProps}
-              step="0.01"
-              disabled={isLoading}
-            />
-            <Select
-              {...register("status")}
-              label={tc("status")}
-              options={[
-                { value: "1", label: tc("active") },
-                { value: "0", label: tc("inactive") },
-              ]}
-              disabled={isLoading}
-            />
-          </div>
+          <BasicInfoTab
+            register={register}
+            errors={errors}
+            isLoading={isLoading}
+            productTypes={productTypes}
+          />
         )}
 
         {activeTab === "strength" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                {...register("strengthValue")}
-                label={t("strengthValue")}
-                placeholder="500"
-                {...positiveNumberInputProps}
-                disabled={isLoading}
-              />
-              <Input
-                {...register("strengthUnit")}
-                label={t("strengthUnit")}
-                placeholder="mg"
-                {...positiveNumberInputProps}
-                disabled={isLoading}
-              />
-            </div>
-            <Input
-              {...register("packageType")}
-              label={t("packageType")}
-              placeholder="e.g. Box"
-              disabled={isLoading}
-            />
-            <Input
-              {...register("packageSize")}
-              label={t("packageSize")}
-              placeholder="e.g. 24 Tablets"
-              disabled={isLoading}
-              {...positiveNumberInputProps}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                {...register("volume")}
-                label={t("volume")}
-                type="number"
-                {...positiveNumberInputProps}
-                disabled={isLoading}
-              />
-              <Input
-                {...register("unitOfVolume")}
-                label={t("unitOfVolume")}
-                placeholder="ml"
-                {...positiveNumberInputProps}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
+          <StrengthPackagingTab
+            register={register}
+            isLoading={isLoading}
+            packageTypeLookups={packageTypeLookups}
+          />
         )}
 
         {activeTab === "regulatory" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
-            <Input
-              {...register("registrationNumber")}
-              label={t("registrationNumber")}
-              disabled={isLoading}
-              {...positiveNumberInputProps}
-            />
-            <Input
-              {...register("manufacturer")}
-              label={t("manufacturer")}
-              disabled={isLoading}
-            />
-            <Select
-              {...register("countryOfOrigin")}
-              label={t("countryOfOrigin")}
-              options={countryOptions}
-              disabled={isLoading}
-            />
-            <Input
-              {...register("vatTypeId")}
-              label={t("vatType")}
-              disabled={isLoading}
-            />
-            <Select
-              {...register("packageTypeId")}
-              label="Package Type (Lookup)"
-              options={packageTypeLookups.map((p) => ({
-                value: String(p.oid),
-                label: p.valueNameEn || p.valueNameAr || "",
-              }))}
-              disabled={isLoading}
-            />
-            <Select
-              {...register("dosageFormId")}
-              label={t("dosageForm")}
-              options={dosageForms.map((d) => ({
-                value: String(d.oid),
-                label: d.valueNameEn || d.valueNameAr || "",
-              }))}
-              disabled={isLoading}
-            />
-            <Input
-              {...register("productGroupId")}
-              label={t("productGroup")}
-              // options={productGroups.map((g) => ({
-              //   value: String(g.oid),
-              //   label: g.valueNameEn || g.valueNameAr || "",
-              // }))}
-              disabled={isLoading}
-            />
-            <div className="flex flex-col gap-4 mt-6">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  {...register("isExportable")}
-                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-                  {t("exportable")}
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  {...register("isImportable")}
-                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-                  {t("importable")}
-                </span>
-              </label>
-            </div>
-          </div>
+          <RegulatoryTab
+            register={register}
+            isLoading={isLoading}
+            countryOptions={countryOptions}
+            packageTypeLookups={packageTypeLookups}
+            dosageForms={dosageForms}
+            vatTypes={vatTypes}
+          />
         )}
 
         {activeTab === "stock" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
-            <Input
-              {...register("minStockLevel")}
-              label={t("minStockLevel")}
-              type="number"
-              disabled={isLoading}
-              {...positiveNumberInputProps}
-            />
-            <Input
-              {...register("maxStockLevel")}
-              label={t("maxStockLevel")}
-              type="number"
-              disabled={isLoading}
-              {...positiveNumberInputProps}
-            />
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 col-span-1 md:col-span-2">
-              <div className="flex gap-3 text-blue-700">
-                <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-bold mb-1">{t("stockLevels")}</p>
-                  <p>{t("stockLevels")} info...</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StockLevelsTab register={register} isLoading={isLoading} />
         )}
 
         <div className="flex justify-end pt-4 border-t border-gray-100">
