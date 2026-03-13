@@ -46,8 +46,17 @@ const menuKeys: {
   { labelKey: "products", icon: "/products", path: "/products" },
   { labelKey: "sales", icon: "/sales", path: "/sales" },
   { labelKey: "stock", icon: "/stock", path: "/stock" },
-  { labelKey: "rsd", icon: "/rsd", path: "/rsd" },
+  {
+    labelKey: "rsd",
+    icon: "/rsd",
+    path: "/rsd",
+    children: [
+      { labelKey: "rsdOperations", path: "/rsd" },
+      { labelKey: "rsdLogs", path: "/rsd/logs" },
+    ],
+  },
   { labelKey: "stakeholders", icon: "/stakeholders", path: "/stakeholders" },
+
   { labelKey: "systemUsers", icon: "/users", path: "/users" },
   { labelKey: "roles", icon: "/roles", path: "/roles" },
   { labelKey: "lookups", icon: "/lookups", path: "/lookups" },

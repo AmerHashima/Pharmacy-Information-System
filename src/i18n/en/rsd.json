@@ -1,0 +1,22 @@
+{
+  "rsdLogs": "RSD Operation Logs",
+  "requestedAt": "Requested At",
+  "operationType": "Operation Type",
+  "branch": "Branch",
+  "notificationId": "Notification ID",
+  "success": "Success",
+  "message": "Message",
+  "logDetails": "Log Details",
+  "operationInfo": "Operation Information",
+  "productsProcessed": "Products Processed",
+  "gtin": "GTIN",
+  "productName": "Product Name",
+  "batch": "Batch",
+  "expiry": "Expiry",
+  "quantity": "Quantity",
+  "serial": "Serial Number",
+  "respCode": "Response Code",
+  "viewLog": "View Log Details",
+  "statusSuccess": "Success",
+  "statusFailed": "Failed"
+}

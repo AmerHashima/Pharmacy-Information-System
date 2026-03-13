@@ -1,0 +1,22 @@
+{
+  "rsdLogs": "سجلات عمليات رصد",
+  "requestedAt": "وقت الطلب",
+  "operationType": "نوع العملية",
+  "branch": "الفرع",
+  "notificationId": "رقم الإشعار",
+  "success": "الحالة",
+  "message": "الرسالة",
+  "logDetails": "تفاصيل السجل",
+  "operationInfo": "معلومات العملية",
+  "productsProcessed": "المنتجات التي تمت معالجتها",
+  "gtin": "GTIN",
+  "productName": "اسم المنتج",
+  "batch": "التشغيلة",
+  "expiry": "تاريخ الانتهاء",
+  "quantity": "الكمية",
+  "serial": "الرقم التسلسلي",
+  "respCode": "رمز الاستجابة",
+  "viewLog": "عرض تفاصيل السجل",
+  "statusSuccess": "ناجح",
+  "statusFailed": "فاشل"
+}

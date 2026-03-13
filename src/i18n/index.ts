@@ -16,6 +16,7 @@ import arRoles from "./ar/roles.json";
 import arStakeholders from "./ar/stakeholders.json";
 import arLookups from "./ar/lookups.json";
 import arIntegrations from "./ar/integrations.json";
+import arRsd from "./ar/rsd.json";
 
 // ── English translations ───────────────────────────────────────────────────
 import enCommon from "./en/common.json";
@@ -31,6 +32,7 @@ import enRoles from "./en/roles.json";
 import enStakeholders from "./en/stakeholders.json";
 import enLookups from "./en/lookups.json";
 import enIntegrations from "./en/integrations.json";
+import enRsd from "./en/rsd.json";
 
 export const LANGUAGES = [
   { code: "ar", label: "العربية", dir: "rtl" as const },
@@ -56,6 +58,7 @@ i18n
         stakeholders: arStakeholders,
         lookups: arLookups,
         integrations: arIntegrations,
+        rsd: arRsd,
       },
       en: {
         common: enCommon,
@@ -71,6 +74,7 @@ i18n
         stakeholders: enStakeholders,
         lookups: enLookups,
         integrations: enIntegrations,
+        rsd: enRsd,
       },
     },
     lng: undefined, // let detector decide first
@@ -90,7 +94,9 @@ i18n
       "stakeholders",
       "lookups",
       "integrations",
+      "rsd",
     ],
+
     detection: {
       order: ["localStorage", "navigator"],
       lookupLocalStorage: "pharmacy-lang",

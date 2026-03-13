@@ -16,10 +16,11 @@ import StockPage from "@/pages/stock/StockPage";
 import StockTransactionsPage from "@/pages/stock/StockTransactionsPage";
 import UsersPage from "@/pages/users/UsersPage";
 import LookupsPage from "@/pages/lookups/LookupsPage";
-import RSDPage from "@/pages/rsd/RSDPage";
 import LookupDetailPage from "@/pages/lookups/LookupDetailPage";
+import RSDPage from "@/pages/rsd/RSDPage";
 import IntegrationProvidersPage from "@/pages/integrations/IntegrationProvidersPage";
 import BranchIntegrationsPage from "@/pages/integrations/BranchIntegrationsPage";
+import RsdLogsPage from "@/pages/rsd/RsdLogsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -65,6 +66,7 @@ export default function App() {
               element={<StockTransactionDetailPage />}
             />
             <Route path="rsd" element={<RSDPage />} />
+            <Route path="rsd/logs" element={<RsdLogsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="lookups" element={<LookupsPage />} />
             <Route path="lookups/:lookupCode" element={<LookupDetailPage />} />
