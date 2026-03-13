@@ -52,12 +52,22 @@ export default function RegulatoryTab({
           />
         )}
       />
-      <Input
-        {...register("vatTypeId")}
-        label={t("vatType")}
-        disabled={isLoading}
-      />
       <Controller
+        name="vatTypeId"
+        control={control}
+        render={({ field }) => (
+          <Input
+            {...field}
+            label={t("vatType")}
+            // options={vatTypes.map((v) => ({
+            //   value: String(v.oid),
+            //   label: v.valueNameEn || v.valueNameAr || "",
+            // }))}
+            disabled={isLoading}
+          />
+        )}
+      />
+      {/* <Controller
         name="packageTypeId"
         control={control}
         render={({ field }) => (
@@ -71,7 +81,7 @@ export default function RegulatoryTab({
             disabled={isLoading}
           />
         )}
-      />
+      /> */}
       <Controller
         name="dosageFormId"
         control={control}

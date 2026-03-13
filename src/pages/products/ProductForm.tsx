@@ -5,11 +5,11 @@ import { Info, ShieldCheck, Database, Layers } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "react-i18next";
 import { ProductDto, CreateProductDto, AppLookupDetailDto } from "@/types";
-import { lookupService } from "@/api/lookupService";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import arLocale from "i18n-iso-countries/langs/ar.json";
 import { getProductSchema, ProductFormValues } from "./schema";
+import { useLookup } from "@/context/LookupContext";
 
 // Tab Components
 import BasicInfoTab from "./components/BasicInfoTab";
@@ -33,17 +33,16 @@ export default function ProductForm({
 }: ProductFormProps) {
   const { t, i18n } = useTranslation("products");
   const tc = useTranslation("common").t;
+  const { getLookupDetails } = useLookup();
 
   const [activeTab, setActiveTab] = useState<
     "basic" | "strength" | "regulatory" | "stock"
   >("basic");
 
-  const [productTypes, setProductTypes] = useState<AppLookupDetailDto[]>([]);
-  const [vatTypes, setVatTypes] = useState<AppLookupDetailDto[]>([]);
-  const [packageTypeLookups, setPackageTypeLookups] = useState<
-    AppLookupDetailDto[]
-  >([]);
-  const [dosageForms, setDosageForms] = useState<AppLookupDetailDto[]>([]);
+  const productTypes = getLookupDetails("PRODUCT_TYPE");
+  const vatTypes = getLookupDetails("VAT_TYPE");
+  const packageTypeLookups = getLookupDetails("PACKAGE_TYPE");
+  const dosageForms = getLookupDetails("Dosage_Form");
 
   const {
     register,
@@ -59,25 +58,6 @@ export default function ProductForm({
       isImportable: false,
     },
   });
-
-  useEffect(() => {
-    const fetchLookups = async () => {
-      try {
-        const [ptRes, pkgRes, doseRes] = await Promise.all([
-          lookupService.getByCode("PRODUCT_TYPE"),
-          lookupService.getByCode("PACKAGE_TYPE").catch(() => null),
-          lookupService.getByCode("DOSAGE_FORM").catch(() => null),
-        ]);
-        setProductTypes(ptRes.data.data?.lookupDetails || []);
-        if (pkgRes)
-          setPackageTypeLookups(pkgRes.data.data?.lookupDetails || []);
-        if (doseRes) setDosageForms(doseRes.data.data?.lookupDetails || []);
-      } catch (err) {
-        console.error("Failed to fetch lookups", err);
-      }
-    };
-    fetchLookups();
-  }, []);
 
   const n = <T,>(v: T | null | undefined) => (v === null ? undefined : v);
 

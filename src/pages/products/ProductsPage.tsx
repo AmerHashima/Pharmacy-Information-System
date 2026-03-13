@@ -22,23 +22,19 @@ import Select from "@/components/ui/Select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ProductForm from "./ProductForm";
 import { productService } from "@/api/productService";
-import { lookupService } from "@/api/lookupService";
 import { useQueryTable } from "@/hooks/useQuery";
 import { handleApiError } from "@/utils/handleApiError";
-import {
-  ProductDto,
-  CreateProductDto,
-  AppLookupDetailDto,
-  FilterOperation,
-} from "@/types";
+import { useLookup } from "@/context/LookupContext";
+import { ProductDto, CreateProductDto, FilterOperation } from "@/types";
 
 export default function ProductsPage() {
   const { t, i18n } = useTranslation("products");
   const isAr = i18n.language === "ar";
   const tc = useTranslation("common").t;
+  const { getLookupDetails } = useLookup();
   const [searchTerm, setSearchTerm] = useState("");
   const [dosageFormId, setDosageFormId] = useState("");
-  const [dosageForms, setDosageForms] = useState<AppLookupDetailDto[]>([]);
+  const dosageForms = getLookupDetails("Dosage_Form");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
@@ -58,18 +54,6 @@ export default function ProductsPage() {
     service: productService.query,
     pageSize: 10,
   });
-
-  useEffect(() => {
-    const fetchLookups = async () => {
-      try {
-        const res = await lookupService.getByCode("Dosage_Form");
-        setDosageForms(res.data.data?.lookupDetails || []);
-      } catch (err) {
-        console.error("Failed to fetch product types", err);
-      }
-    };
-    fetchLookups();
-  }, []);
 
   const loadData = useCallback(() => {
     const filters = [];
