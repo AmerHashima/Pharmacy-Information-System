@@ -7,6 +7,10 @@ import {
   RsdAcceptBatchRequest,
   RsdAcceptBatchResponseData,
   ApiResponse,
+  QueryRequest,
+  PagedResult,
+  RsdOperationLogDto,
+  RsdOperationLogDetailDto,
 } from "@/types";
 
 export const rsdService = {
@@ -26,5 +30,14 @@ export const rsdService = {
     api.post<ApiResponse<RsdAcceptBatchResponseData>>(
       "/api/RsdIntegration/accept-batch",
       data,
+    ),
+  queryOperationLogs: (data: QueryRequest) =>
+    api.post<ApiResponse<PagedResult<RsdOperationLogDto>>>(
+      "/api/RsdIntegration/operation-logs/query",
+      data,
+    ),
+  getOperationLog: (id: string) =>
+    api.get<ApiResponse<RsdOperationLogDetailDto>>(
+      `/api/RsdIntegration/operation-logs/${id}`,
     ),
 };

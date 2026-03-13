@@ -745,3 +745,34 @@ export interface RsdAcceptBatchResponseData {
   products: RsdProductDto[];
   rawResponse: string | null;
 }
+
+export interface RsdOperationLogDto {
+  oid: string;
+  operationTypeId: string;
+  operationTypeName: string | null;
+  branchId: string;
+  branchName: string | null;
+  gln: string | null;
+  notificationId: string | null;
+  success: boolean;
+  responseCode: string | null;
+  responseMessage: string | null;
+  requestedAt: string;
+  createdAt: string;
+}
+
+export interface RsdOperationLogItemDto {
+  oid: string;
+  gtin: string | null;
+  productId: string | null;
+  productName: string | null;
+  batchNumber: string | null;
+  expiryDate: string | null;
+  quantity: number;
+  serialNumber: string | null;
+  responseCode: string | null;
+}
+
+export interface RsdOperationLogDetailDto extends RsdOperationLogDto {
+  details: RsdOperationLogItemDto[];
+}
