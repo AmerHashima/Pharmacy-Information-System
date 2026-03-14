@@ -288,6 +288,35 @@ export interface ProductDto {
   updatedAt?: string | null;
 }
 
+export interface ProductUnitDto {
+  oid: string;
+  productId: string;
+  productName: string | null;
+  packageTypeId: string;
+  packageTypeName: string | null;
+  conversionFactor: number;
+  price: number;
+  barcode: string | null;
+  createdAt: string;
+}
+
+export interface UpdateProductUnitDto {
+  oid: string;
+  productId: string;
+  packageTypeId: string;
+  conversionFactor: number;
+  price: number;
+  barcode: string | null;
+}
+
+export interface CreateProductUnitDto {
+  productId: string;
+  packageTypeId: string;
+  conversionFactor: number;
+  price: number;
+  barcode: string | null;
+}
+
 export interface CreateProductDto {
   gtin?: string;
   barcode?: string;
