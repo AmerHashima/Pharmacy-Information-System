@@ -11,16 +11,15 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/shared/PageHeader";
 import SearchBar from "@/components/shared/SearchBar";
 import Table from "@/components/ui/Table";
 import Pagination from "@/components/ui/Pagination";
 import Badge from "@/components/ui/Badge";
-import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import ProductForm from "./ProductForm";
 import { productService } from "@/api/productService";
 import { usePaginatedProducts } from "@/hooks/queries/useProducts";
 import { queryKeys } from "@/hooks/queries/queryKeys";
@@ -37,13 +36,13 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dosageFormId, setDosageFormId] = useState("");
   const dosageForms = getLookupDetails("Dosage_Form");
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
     null,
   );
   const [isActionLoading, setIsActionLoading] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [pageNumber, setPageNumber] = useState(1);
   const { data: pagedData, isLoading } = usePaginatedProducts(
@@ -55,34 +54,6 @@ export default function ProductsPage() {
   const data = pagedData?.data ?? [];
   const totalPages = pagedData?.totalPages ?? 0;
   const totalRecords = pagedData?.totalRecords ?? 0;
-
-  const handleCreateOrUpdate = async (formData: CreateProductDto) => {
-    const data = {
-      ...formData,
-      vatTypeId: formData.vatTypeId || null,
-      productGroupId: formData.productGroupId || null,
-    };
-
-    setIsActionLoading(true);
-    try {
-      if (selectedProduct) {
-        await productService.update(selectedProduct.oid, {
-          ...data,
-          oid: selectedProduct.oid,
-        });
-        toast.success(t("productUpdated"));
-      } else {
-        await productService.create(data);
-        toast.success(t("productCreated"));
-      }
-      setIsFormOpen(false);
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedProduct) return;
@@ -206,8 +177,7 @@ export default function ProductsPage() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSelectedProduct(info.row.original);
-              setIsFormOpen(true);
+              navigate(`/products/edit/${info.row.original.oid}`);
             }}
             className="text-blue-600  p-0 hover:bg-blue-50"
           >
@@ -234,8 +204,7 @@ export default function ProductsPage() {
       <PageHeader
         title={t("title")}
         onAddClick={() => {
-          setSelectedProduct(null);
-          setIsFormOpen(true);
+          navigate("/products/new");
         }}
         addLabel={t("addProduct")}
       />
@@ -282,19 +251,6 @@ export default function ProductsPage() {
           onPageChange={setPageNumber}
         />
       </div>
-
-      <Modal
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title={selectedProduct ? t("editProduct") : t("addProduct")}
-        size="2xl"
-      >
-        <ProductForm
-          initialData={selectedProduct}
-          onSubmit={handleCreateOrUpdate}
-          isLoading={isActionLoading}
-        />
-      </Modal>
 
       <ConfirmDialog
         isOpen={isDeleteOpen}

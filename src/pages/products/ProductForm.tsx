@@ -35,10 +35,6 @@ export default function ProductForm({
   const tc = useTranslation("common").t;
   const { getLookupDetails } = useLookup();
 
-  const [activeTab, setActiveTab] = useState<
-    "basic" | "strength" | "regulatory" | "stock"
-  >("basic");
-
   const productTypes = getLookupDetails("PRODUCT_TYPE");
   const vatTypes = getLookupDetails("VAT_TYPE");
   const packageTypeLookups = getLookupDetails("PACKAGE_TYPE");
@@ -107,13 +103,6 @@ export default function ProductForm({
     });
   }, [initialData, reset]);
 
-  const tabs = [
-    { id: "basic", label: t("basicInfo"), icon: Info },
-    { id: "strength", label: t("strengthPackaging"), icon: Layers },
-    { id: "regulatory", label: t("regulatory"), icon: ShieldCheck },
-    { id: "stock", label: t("stockLevels"), icon: Database },
-  ];
-
   const currentLang = i18n.language === "ar" ? "ar" : "en";
   const countryOptions = Object.entries(
     countries.getNames(currentLang, { select: "official" }),
@@ -123,73 +112,76 @@ export default function ProductForm({
     flag: code,
   }));
 
-  return (
-    <div className="space-y-6">
-      <div className="flex border-b border-gray-100 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => (
-          <button
-            type="button"
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === tab.id
-                ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {activeTab === "basic" && (
-          <BasicInfoTab
-            register={register}
-            errors={errors}
-            isLoading={isLoading}
-            productTypes={productTypes}
-            control={control}
-          />
-        )}
-
-        {activeTab === "strength" && (
-          <StrengthPackagingTab
-            register={register}
-            isLoading={isLoading}
-            packageTypeLookups={packageTypeLookups}
-            control={control}
-          />
-        )}
-
-        {activeTab === "regulatory" && (
-          <RegulatoryTab
-            productGroups={productGroups}
-            register={register}
-            isLoading={isLoading}
-            countryOptions={countryOptions}
-            packageTypeLookups={packageTypeLookups}
-            dosageForms={dosageForms}
-            vatTypes={vatTypes}
-            control={control}
-          />
-        )}
-
-        {activeTab === "stock" && (
-          <StockLevelsTab register={register} isLoading={isLoading} />
-        )}
-
-        <div className="flex justify-end pt-4 border-t border-gray-100">
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="px-10 py-3 shadow-lg shadow-blue-200"
-          >
-            {initialData ? t("updateProduct") : t("createProduct")}
-          </Button>
+  const FormSection = ({
+    title,
+    icon: Icon,
+    children,
+  }: {
+    title: string;
+    icon: any;
+    children: React.ReactNode;
+  }) => (
+    <div className="space-y-4 pt-6 first:pt-0">
+      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+          <Icon className="h-5 w-5" />
         </div>
-      </form>
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      </div>
+      <div className="pl-4 border-l-2 border-transparent">{children}</div>
     </div>
+  );
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-10 divide-y divide-gray-50"
+    >
+      <FormSection title={t("basicInfo")} icon={Info}>
+        <BasicInfoTab
+          register={register}
+          errors={errors}
+          isLoading={isLoading}
+          productTypes={productTypes}
+          control={control}
+        />
+      </FormSection>
+
+      <FormSection title={t("strengthPackaging")} icon={Layers}>
+        <StrengthPackagingTab
+          register={register}
+          isLoading={isLoading}
+          packageTypeLookups={packageTypeLookups}
+          control={control}
+        />
+      </FormSection>
+
+      <FormSection title={t("regulatory")} icon={ShieldCheck}>
+        <RegulatoryTab
+          productGroups={productGroups}
+          register={register}
+          isLoading={isLoading}
+          countryOptions={countryOptions}
+          packageTypeLookups={packageTypeLookups}
+          dosageForms={dosageForms}
+          vatTypes={vatTypes}
+          control={control}
+        />
+      </FormSection>
+
+      <FormSection title={t("stockLevels")} icon={Database}>
+        <StockLevelsTab register={register} isLoading={isLoading} />
+      </FormSection>
+
+      <div className="flex justify-end pt-8">
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          className="px-12 py-3 shadow-lg shadow-blue-200 min-w-[200px]"
+        >
+          {initialData ? t("updateProduct") : t("createProduct")}
+        </Button>
+      </div>
+    </form>
   );
 }

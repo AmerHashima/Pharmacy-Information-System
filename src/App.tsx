@@ -20,6 +20,8 @@ import LookupDetailPage from "@/pages/lookups/LookupDetailPage";
 import RSDPage from "@/pages/rsd/RSDPage";
 import IntegrationProvidersPage from "@/pages/integrations/IntegrationProvidersPage";
 import BranchIntegrationsPage from "@/pages/integrations/BranchIntegrationsPage";
+import RsdLogsPage from "@/pages/rsd/RsdLogsPage";
+import ProductFormPage from "@/pages/products/ProductFormPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -28,7 +30,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 import { LookupProvider } from "@/context/LookupContext";
 import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
-import RsdLogsPage from "./pages/rsd/RsdLogsPage";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,8 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="branches" element={<BranchesPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="products/new" element={<ProductFormPage />} />
+            <Route path="products/edit/:id" element={<ProductFormPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="sales" element={<SalesPage />} />
             <Route path="sales/:id" element={<SaleDetailPage />} />
