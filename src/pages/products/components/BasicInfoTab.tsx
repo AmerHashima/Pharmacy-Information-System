@@ -31,7 +31,7 @@ export default function BasicInfoTab({
   const tc = useTranslation("common").t;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
       <Input
         {...register("drugName")}
         label={t("drugName") + "*"}

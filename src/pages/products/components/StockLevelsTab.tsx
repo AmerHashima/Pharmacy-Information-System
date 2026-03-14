@@ -17,7 +17,7 @@ export default function StockLevelsTab({
   const { t } = useTranslation("products");
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
       <Input
         {...register("minStockLevel")}
         label={t("minStockLevel")}
@@ -32,7 +32,7 @@ export default function StockLevelsTab({
         disabled={isLoading}
         {...positiveNumberInputProps}
       />
-      <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 col-span-1 md:col-span-2">
+      {/* <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 col-span-1 md:col-span-2">
         <div className="flex gap-3 text-blue-700">
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
@@ -40,7 +40,7 @@ export default function StockLevelsTab({
             <p>{t("stockLevels")} info...</p>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
