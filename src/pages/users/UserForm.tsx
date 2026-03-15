@@ -151,7 +151,7 @@ export default function UserForm({
           label={t("role") + "*"}
           options={roles.map((r) => ({
             value: r.oid,
-            label: r.roleName ?? "",
+            label: r.name || r.roleName || "",
           }))}
           error={errors.roleId?.message}
           disabled={isLoading}

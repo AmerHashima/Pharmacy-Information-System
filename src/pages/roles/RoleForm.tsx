@@ -23,9 +23,8 @@ export default function RoleForm({
   const tc = useTranslation("common").t;
 
   const roleSchema = z.object({
-    roleName: z.string().min(1, t("roleNameRequired")).max(50),
-    roleNameAr: z.string().optional(),
-    status: z.coerce.number().default(1),
+    name: z.string().min(1, t("roleNameRequired")).max(50),
+    description: z.string().optional(),
   });
 
   type RoleFormValues = z.infer<typeof roleSchema>;
@@ -37,17 +36,13 @@ export default function RoleForm({
     formState: { errors },
   } = useForm<RoleFormValues>({
     resolver: zodResolver(roleSchema),
-    defaultValues: {
-      status: 1,
-    },
   });
 
   useEffect(() => {
     if (initialData) {
       reset({
-        roleName: initialData.roleName || "",
-        roleNameAr: initialData.roleNameAr || "",
-        status: initialData.status ?? 1,
+        name: initialData.name || initialData.roleName || "",
+        description: initialData.description || initialData.roleNameAr || "",
       });
     }
   }, [initialData, reset]);
@@ -56,26 +51,17 @@ export default function RoleForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <Input
-          {...register("roleName")}
+          {...register("name")}
           label={t("roleName") + " (English)*"}
           placeholder="e.g. Administrator"
-          error={errors.roleName?.message}
+          error={errors.name?.message}
           disabled={isLoading}
         />
         <Input
-          {...register("roleNameAr")}
-          label={t("roleName") + " (Arabic)"}
-          placeholder="e.g. مدير النظام"
-          error={errors.roleNameAr?.message}
-          disabled={isLoading}
-        />
-        <Select
-          {...register("status")}
-          label={tc("status")}
-          options={[
-            { value: 1, label: tc("active") },
-            { value: 0, label: tc("inactive") },
-          ]}
+          {...register("description")}
+          label={t("description")}
+          placeholder="e.g. System Administrator with full access"
+          error={errors.description?.message}
           disabled={isLoading}
         />
       </div>

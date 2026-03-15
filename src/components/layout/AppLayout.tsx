@@ -51,8 +51,8 @@ export default function AppLayout() {
         }`}
       >
         <Topbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
-          <div className="max-w-7xl mx-auto w-full overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 ">
+          <div className="max-w-8xl mx-auto w-full overflow-x-hidden">
             <Outlet />
           </div>
         </main>

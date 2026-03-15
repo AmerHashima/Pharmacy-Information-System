@@ -10,6 +10,7 @@
   "searchPlaceholder": "Search by name...",
   "roleName": "Role Name",
   "roleNameRequired": "Role name is required",
+  "description": "Description",
   "permissions": "Permissions",
   "createRole": "Create Role",
   "updateRole": "Update Role"

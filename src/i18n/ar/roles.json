@@ -10,6 +10,7 @@
   "searchPlaceholder": "البحث بالاسم...",
   "roleName": "اسم الدور",
   "roleNameRequired": "اسم الدور مطلوب",
+  "description": "الوصف",
   "permissions": "الصلاحيات",
   "createRole": "إنشاء دور",
   "updateRole": "تحديث الدور"

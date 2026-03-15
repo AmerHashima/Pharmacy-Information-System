@@ -174,20 +174,26 @@ export interface UpdateSystemUserDto extends CreateSystemUserDto {
 
 export interface RoleDto {
   oid: string;
-  roleName: string;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
+  // Legacy fields
+  roleName?: string;
   roleNameAr?: string;
   userCount?: number;
   status?: number;
 }
 
 export interface CreateRoleDto {
-  roleName: string;
-  roleNameAr?: string;
-  status?: number;
+  name: string;
+  description?: string;
 }
 
-export interface UpdateRoleDto extends CreateRoleDto {
+export interface UpdateRoleDto {
   oid: string;
+  name: string;
+  description?: string;
 }
 
 // ─── Branch ───────────────────────────────────────────────────────────────────

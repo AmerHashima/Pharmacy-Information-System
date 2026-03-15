@@ -42,7 +42,7 @@ export default function RolesPage() {
     const filters = searchTerm
       ? [
           {
-            propertyName: "roleName",
+            propertyName: "Name",
             value: searchTerm,
             operation: FilterOperation.Contains,
           },
@@ -59,7 +59,10 @@ export default function RolesPage() {
     setIsActionLoading(true);
     try {
       if (selectedRole) {
-        await roleService.update(selectedRole.oid, formData);
+        await roleService.update(selectedRole.oid, {
+          ...formData,
+          oid: selectedRole.oid,
+        });
         toast.success(t("roleUpdated"));
       } else {
         await roleService.create(formData);
@@ -92,7 +95,7 @@ export default function RolesPage() {
   const columns = [
     {
       header: t("roleName"),
-      accessorKey: "roleName",
+      accessorKey: "name",
       cell: (info: any) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
@@ -101,28 +104,21 @@ export default function RolesPage() {
           <div className="flex flex-col">
             <span className="font-bold text-gray-900">{info.getValue()}</span>
             <span className="text-xs text-gray-400 font-medium">
-              {info.row.original.roleNameAr || "---"}
+              {info.row.original.description || "---"}
             </span>
           </div>
         </div>
       ),
     },
     {
-      header: t("assignedUsers"),
-      accessorKey: "userCount",
+      header: tc("createdAt"),
+      accessorKey: "createdAt",
       cell: (info: any) => (
-        <span className="px-3 py-1 bg-gray-50 text-gray-600 rounded-full text-xs font-bold border border-gray-100">
-          {info.getValue() || 0} Users
+        <span className="text-sm text-gray-500">
+          {info.getValue()
+            ? new Date(info.getValue()).toLocaleDateString()
+            : "---"}
         </span>
-      ),
-    },
-    {
-      header: tc("status"),
-      accessorKey: "status",
-      cell: (info: any) => (
-        <Badge variant={info.getValue() === 1 ? "success" : "danger"}>
-          {info.getValue() === 1 ? tc("active") : tc("inactive")}
-        </Badge>
       ),
     },
     {
