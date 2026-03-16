@@ -11,6 +11,7 @@ import ProductsPage from "@/pages/products/ProductsPage";
 import RolesPage from "@/pages/roles/RolesPage";
 import SalesPage from "@/pages/sales/SalesPage";
 import SaleDetailPage from "@/pages/sales/SaleDetailPage";
+import RefundDetailPage from "@/pages/sales/RefundDetailPage";
 import StakeholdersPage from "@/pages/stakeholders/StakeholdersPage";
 import StockPage from "@/pages/stock/StockPage";
 import StockTransactionsPage from "@/pages/stock/StockTransactionsPage";
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="roles" element={<RolesPage />} />
             <Route path="sales" element={<SalesPage />} />
             <Route path="sales/:id" element={<SaleDetailPage />} />
+            <Route path="sales/refund/:id" element={<RefundDetailPage />} />
             <Route path="stakeholders" element={<StakeholdersPage />} />
             <Route path="stock" element={<StockPage />} />
             <Route

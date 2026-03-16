@@ -4,10 +4,13 @@ import PageHeader from "@/components/shared/PageHeader";
 import SaleForm from "./SaleForm";
 import SalesTabs from "./components/SalesTabs";
 import SalesHistory from "./components/SalesHistory";
+import RefundHistory from "./components/RefundHistory";
 
 export default function SalesPage() {
   const { t } = useTranslation("sales");
-  const [activeTab, setActiveTab] = useState<"form" | "history">("form");
+  const [activeTab, setActiveTab] = useState<"form" | "history" | "refund">(
+    "form",
+  );
 
   return (
     <div className="space-y-1">
@@ -22,10 +25,11 @@ export default function SalesPage() {
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
         {activeTab === "form" && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <SaleForm onSuccess={() => setActiveTab("history")} />
+            <SaleForm />
           </div>
         )}
         {activeTab === "history" && <SalesHistory />}
+        {activeTab === "refund" && <RefundHistory />}
       </div>
     </div>
   );
