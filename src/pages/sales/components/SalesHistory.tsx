@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import {
   Eye,
   Printer,
@@ -18,6 +19,7 @@ import Button from "@/components/ui/Button";
 import { salesService } from "@/api/salesService";
 import { useQueryTable } from "@/hooks/useQuery";
 import { SalesInvoiceDto, FilterOperation } from "@/types";
+import PrintableInvoice from "./detail-page/PrintableInvoice";
 
 export default function SalesHistory() {
   const { t, i18n } = useTranslation("sales");
@@ -28,6 +30,27 @@ export default function SalesHistory() {
     start: format(startOfMonth(new Date()), "yyyy-MM-dd"),
     end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
   });
+
+  const [selectedInvoice, setSelectedInvoice] =
+    useState<SalesInvoiceDto | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Invoice_${selectedInvoice?.invoiceNumber}`,
+  });
+
+  const handlePrintRow = (invoice: SalesInvoiceDto) => {
+    setSelectedInvoice(invoice);
+    // useReactToPrint will work because handlePrint is a stable function
+    // but we need to wait for the state to update if we were relying on it in the same render.
+    // However, react-to-print captures the content at the time of calling.
+    // Actually, setting state and calling handlePrint immediately might be tricky.
+    // Better way: trigger print in an effect or use the promise-based version if available.
+    setTimeout(() => {
+      handlePrint();
+    }, 100);
+  };
 
   const { data, isLoading, pageNumber, setPageNumber, totalPages, fetch } =
     useQueryTable<SalesInvoiceDto>({
@@ -156,9 +179,7 @@ export default function SalesHistory() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              /* Print Logic */
-            }}
+            onClick={() => handlePrintRow(info.row.original)}
             className="text-gray-600  p-0 hover:bg-gray-100"
           >
             <Printer className="h-4 w-4" />
@@ -204,6 +225,11 @@ export default function SalesHistory() {
           onPageChange={setPageNumber}
         />
       </div>
+
+      {/* Hidden printable invoice for row actions */}
+      {selectedInvoice && (
+        <PrintableInvoice ref={printRef} invoice={selectedInvoice} />
+      )}
     </div>
   );
 }

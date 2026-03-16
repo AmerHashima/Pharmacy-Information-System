@@ -10,6 +10,7 @@ import SaleDetailLoading from "./components/detail-page/SaleDetailLoading";
 import SaleDetailNotFound from "./components/detail-page/SaleDetailNotFound";
 import SaleDetailHeader from "./components/detail-page/SaleDetailHeader";
 import InvoiceDocument from "./components/detail-page/InvoiceDocument";
+import PrintableInvoice from "./components/detail-page/PrintableInvoice";
 import InvoiceSidebar from "./components/detail-page/InvoiceSidebar";
 
 export default function SaleDetailPage() {
@@ -18,10 +19,11 @@ export default function SaleDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
-  // Reference for react-to-print
+  // References for printing
   const componentRef = useRef<HTMLDivElement>(null);
+  const printComponentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
-    contentRef: componentRef,
+    contentRef: printComponentRef,
     documentTitle: `Invoice_${invoice?.invoiceNumber || id}`,
   });
 
@@ -70,6 +72,9 @@ export default function SaleDetailPage() {
         invoice={invoice}
         onSuccess={fetchInvoice}
       />
+
+      {/* Hidden printable invoice */}
+      <PrintableInvoice ref={printComponentRef} invoice={invoice} />
     </div>
   );
 }
