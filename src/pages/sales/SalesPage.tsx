@@ -25,7 +25,7 @@ export default function SalesPage() {
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
         {activeTab === "form" && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <SaleForm />
+            <SaleForm onSuccess={() => {}} />
           </div>
         )}
         {activeTab === "history" && <SalesHistory />}
