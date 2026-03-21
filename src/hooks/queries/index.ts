@@ -4,4 +4,5 @@ export { useBranches, useInfiniteBranches } from "./useBranches";
 export {
   usePaginatedProducts,
   usePaginatedBranches,
+  usePaginatedSuppliers,
 } from "./usePaginatedSelect";

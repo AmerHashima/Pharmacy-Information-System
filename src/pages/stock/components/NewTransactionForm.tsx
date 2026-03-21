@@ -1,22 +1,20 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
 import { Save } from "lucide-react";
 import toast from "react-hot-toast";
-import { useQuery } from "@tanstack/react-query";
 
 import Button from "@/components/ui/Button";
 import { useLookup } from "@/context/LookupContext";
-import { stakeholderService } from "@/api/stakeholderService";
 import { stockService } from "@/api/stockService";
+import { CreateStockTransactionDto } from "@/types";
 import {
-  StakeholderDto,
-  CreateStockTransactionDto,
-  FilterOperation,
-} from "@/types";
-import { usePaginatedProducts, useBranches, queryKeys } from "@/hooks/queries";
+  usePaginatedProducts,
+  usePaginatedBranches,
+  usePaginatedSuppliers,
+} from "@/hooks/queries";
 
 import TransactionGeneralInfo from "./TransactionGeneralInfo";
 import TransactionItemsTable from "./TransactionItemsTable";
@@ -70,9 +68,6 @@ export default function NewTransactionForm() {
   const typeCode = selectedType?.oid;
 
   // ─── Products — paginated + cached via TanStack Query ────────────────────
-  //
-  // We pass the currently-selected productIds so the hook can preserve them
-  // even when a new search replaces the visible page.
 
   const selectedProductIds = (getValues("details") || [])
     .map((d) => d.productId)
@@ -87,32 +82,25 @@ export default function NewTransactionForm() {
     isLoadingMore: isLoadingMoreProducts,
   } = usePaginatedProducts({ preserveIds: selectedProductIds });
 
-  // ─── Branches — static list cached for 10 min ────────────────────────────
+  // ─── Branches — paginated + cached via TanStack Query ────────────────────
 
-  const { data: branches = [] } = useBranches();
+  const {
+    options: branches,
+    setSearch: debouncedFetchBranches,
+    loadMore: handleLoadMoreBranches,
+    hasMore: branchesHasMore,
+    isLoadingMore: isLoadingMoreBranches,
+  } = usePaginatedBranches();
 
-  // ─── Suppliers — static vendor list cached for 10 min ────────────────────
+  // ─── Suppliers — paginated + cached via TanStack Query ───────────────────
 
-  const { data: suppliers = [] } = useQuery({
-    queryKey: queryKeys.stakeholders.vendors(),
-    queryFn: () =>
-      stakeholderService
-        .query({
-          request: {
-            pagination: { getAll: true, pageNumber: 1, pageSize: 100 },
-            filters: [
-              {
-                propertyName: "StakeholderTypeCode",
-                value: "VENDOR",
-                operation: FilterOperation.Equals,
-              },
-            ],
-            sort: [{ sortBy: "name", sortDirection: "asc" }],
-          },
-        })
-        .then((res) => (res.data.data?.data ?? []) as StakeholderDto[]),
-    staleTime: 1000 * 60 * 10,
-  });
+  const {
+    options: suppliers,
+    setSearch: debouncedFetchSuppliers,
+    loadMore: handleLoadMoreSuppliers,
+    hasMore: suppliersHasMore,
+    isLoadingMore: isLoadingMoreSuppliers,
+  } = usePaginatedSuppliers();
 
   // ─── Submission ───────────────────────────────────────────────────────────
 
@@ -167,6 +155,14 @@ export default function NewTransactionForm() {
               value: s.oid,
               label: s.name,
             }))}
+            debouncedFetchBranches={debouncedFetchBranches}
+            onLoadMoreBranches={handleLoadMoreBranches}
+            branchesHasMore={branchesHasMore}
+            isLoadingMoreBranches={isLoadingMoreBranches}
+            debouncedFetchSuppliers={debouncedFetchSuppliers}
+            onLoadMoreSuppliers={handleLoadMoreSuppliers}
+            suppliersHasMore={suppliersHasMore}
+            isLoadingMoreSuppliers={isLoadingMoreSuppliers}
           />
 
           <TransactionItemsTable

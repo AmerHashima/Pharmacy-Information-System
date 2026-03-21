@@ -16,6 +16,7 @@ import {
   ProductDto,
   FilterOperation,
 } from "@/types";
+import { usePaginatedBranches, usePaginatedSuppliers } from "@/hooks/queries";
 
 import TransactionHeader from "./components/TransactionHeader";
 import TransactionGeneralInfo from "./components/TransactionGeneralInfo";
@@ -27,8 +28,6 @@ export default function StockTransactionReturnDetailPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation("stock");
   const { getLookupDetails } = useLookup();
-  const [branches, setBranches] = useState<BranchDto[]>([]);
-  const [suppliers, setSuppliers] = useState<StakeholderDto[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,37 +54,30 @@ export default function StockTransactionReturnDetailPage() {
   );
   const typeCode = selectedType?.oid;
 
+  // ─── Branches — paginated ────────────────────────────────────────────────
+
+  const {
+    options: branches,
+    setSearch: debouncedFetchBranches,
+    loadMore: handleLoadMoreBranches,
+    hasMore: branchesHasMore,
+    isLoadingMore: isLoadingMoreBranches,
+  } = usePaginatedBranches();
+
+  // ─── Suppliers — paginated ───────────────────────────────────────────────
+
+  const {
+    options: suppliers,
+    setSearch: debouncedFetchSuppliers,
+    loadMore: handleLoadMoreSuppliers,
+    hasMore: suppliersHasMore,
+    isLoadingMore: isLoadingMoreSuppliers,
+  } = usePaginatedSuppliers();
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [bRes, sRes] = await Promise.all([
-          branchService.query({
-            request: {
-              pagination: { getAll: false, pageNumber: 1, pageSize: 10 },
-              sort: [{ sortBy: "branchName", sortDirection: "asc" }],
-            },
-          }),
-          stakeholderService.query({
-            request: {
-              pagination: { getAll: false, pageNumber: 1, pageSize: 10 },
-              filters: [
-                {
-                  propertyName: "StakeholderTypeCode",
-                  value: "VENDOR",
-                  operation: FilterOperation.Equals,
-                },
-              ],
-              sort: [{ sortBy: "name", sortDirection: "asc" }],
-            },
-          }),
-        ]);
-
-        if (bRes.data.success && bRes.data.data)
-          setBranches(bRes.data.data.data);
-        if (sRes.data.success && sRes.data.data)
-          setSuppliers(sRes.data.data.data);
-
         // Fetch transaction data
         if (id) {
           const tRes = await stockTransactionReturnService.getById(id);
@@ -187,6 +179,14 @@ export default function StockTransactionReturnDetailPage() {
               branchOptions={getBranchOptions()}
               supplierOptions={getSupplierOptions()}
               isViewMode={true}
+              debouncedFetchBranches={debouncedFetchBranches}
+              onLoadMoreBranches={handleLoadMoreBranches}
+              branchesHasMore={branchesHasMore}
+              isLoadingMoreBranches={isLoadingMoreBranches}
+              debouncedFetchSuppliers={debouncedFetchSuppliers}
+              onLoadMoreSuppliers={handleLoadMoreSuppliers}
+              suppliersHasMore={suppliersHasMore}
+              isLoadingMoreSuppliers={isLoadingMoreSuppliers}
             />
 
             <TransactionItemsTable
