@@ -21,6 +21,7 @@ interface TransactionItemsTableProps {
   productsHasMore: boolean;
   /** True while the next page of products is in-flight. */
   isLoadingMoreProducts: boolean;
+  showAddProducts?: boolean;
 }
 
 export default function TransactionItemsTable({
@@ -30,6 +31,7 @@ export default function TransactionItemsTable({
   onLoadMoreProducts,
   productsHasMore,
   isLoadingMoreProducts,
+  showAddProducts = true,
 }: TransactionItemsTableProps) {
   const { t, i18n } = useTranslation("stock");
   const isRtl = i18n.dir() === "rtl";
@@ -140,88 +142,90 @@ export default function TransactionItemsTable({
 
   return (
     <Card className="overflow-visible min-h-[400px] border-none shadow-lg">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-        {/* <div className="flex items-center gap-3">
+      {showAddProducts && (
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
+          {/* <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
             <Plus size={20} />
           </div>
           <h2 className="text-xl font-bold text-gray-800">{t("items")}</h2>
         </div> */}
 
-        <div className="flex flex-1 flex-col sm:flex-row items-stretch gap-3 w-full max-w-2xl">
-          <div className="flex-1">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-green-500">
-                <ScanLine className="h-5 w-5" />
+          <div className="flex flex-1 flex-col sm:flex-row items-stretch gap-3 w-full max-w-2xl">
+            <div className="flex-1">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-green-500">
+                  <ScanLine className="h-5 w-5" />
+                </div>
+                <Input
+                  placeholder={t("qrcode") || "Scan barcode"}
+                  value={barcodeInput}
+                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  disabled={isScanning}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleGlobalBarcodeScan(barcodeInput);
+                    }
+                  }}
+                  autoFocus
+                  className={`pl-10  text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
+                    isScanning ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                />
               </div>
-              <Input
-                placeholder={t("qrcode") || "Scan barcode"}
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                disabled={isScanning}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleGlobalBarcodeScan(barcodeInput);
+            </div>
+            <div className="flex-1">
+              <Select
+                options={products.map((p) => ({
+                  value: p.oid,
+                  label: `${p.drugName} - ${p.gtin || ""}`,
+                }))}
+                searchPlaceholder={t("search_product") || "Search by name"}
+                onSearchChange={debouncedFetchProducts}
+                // ── Pagination ──────────────────────────────────────────────
+                onLoadMore={onLoadMoreProducts}
+                hasMore={productsHasMore}
+                isLoadingMore={isLoadingMoreProducts}
+                onChange={(e) => {
+                  const prod = products.find((p) => p.oid === e.target.value);
+                  if (prod) {
+                    append({
+                      productId: prod.oid,
+                      qrcode: "",
+                      quantity: 1,
+                      unitCost: prod.price || 0,
+                      batchNumber: "",
+                      expiryDate: "",
+                    });
                   }
                 }}
-                autoFocus
-                className={`pl-10  text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
-                  isScanning ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                value=""
+                className="bg-white border-gray-200"
               />
             </div>
-          </div>
-          <div className="flex-1">
-            <Select
-              options={products.map((p) => ({
-                value: p.oid,
-                label: `${p.drugName} - ${p.gtin || ""}`,
-              }))}
-              searchPlaceholder={t("search_product") || "Search by name"}
-              onSearchChange={debouncedFetchProducts}
-              // ── Pagination ──────────────────────────────────────────────
-              onLoadMore={onLoadMoreProducts}
-              hasMore={productsHasMore}
-              isLoadingMore={isLoadingMoreProducts}
-              onChange={(e) => {
-                const prod = products.find((p) => p.oid === e.target.value);
-                if (prod) {
-                  append({
-                    productId: prod.oid,
-                    qrcode: "",
-                    quantity: 1,
-                    unitCost: prod.price || 0,
-                    batchNumber: "",
-                    expiryDate: "",
-                  });
-                }
-              }}
-              value=""
-              className="bg-white border-gray-200"
-            />
-          </div>
 
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              append({
-                productId: "",
-                qrcode: "",
-                quantity: 1,
-                unitCost: 0,
-                batchNumber: "",
-                expiryDate: "",
-              })
-            }
-            className="flex items-center justify-center gap-2 px-6 shadow-sm shadow-blue-200 active:scale-95 transition-transform"
-          >
-            <Plus size={18} />
-            <span className="whitespace-nowrap">{t("add_item")}</span>
-          </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() =>
+                append({
+                  productId: "",
+                  qrcode: "",
+                  quantity: 1,
+                  unitCost: 0,
+                  batchNumber: "",
+                  expiryDate: "",
+                })
+              }
+              className="flex items-center justify-center gap-2 px-6 shadow-sm shadow-blue-200 active:scale-95 transition-transform"
+            >
+              <Plus size={18} />
+              <span className="whitespace-nowrap">{t("add_item")}</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div
         className="overflow-x-auto overflow-y-visible min-h-[300px]"

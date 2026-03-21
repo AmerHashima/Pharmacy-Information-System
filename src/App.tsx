@@ -31,6 +31,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 import { LookupProvider } from "@/context/LookupContext";
 import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
+import StockTransactionReturnPage from "./pages/stock/StockTransactionReturnPage";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,10 @@ export default function App() {
             <Route
               path="stock/transactions/:id"
               element={<StockTransactionDetailPage />}
+            />
+            <Route
+              path="stock/transactions/:id/return"
+              element={<StockTransactionReturnPage />}
             />
             <Route path="rsd" element={<RSDPage />} />
             <Route path="rsd/logs" element={<RsdLogsPage />} />

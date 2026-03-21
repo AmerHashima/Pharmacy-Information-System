@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 
 interface TransactionHeaderProps {
   typeCode?: string;
+  className?: string;
 }
 
 export default function TransactionHeader({
   typeCode,
+  className,
 }: TransactionHeaderProps) {
   const { t } = useTranslation("stock");
 
@@ -24,8 +26,10 @@ export default function TransactionHeader({
   };
 
   return (
-    <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+    <div
+      className={`flex items-center justify-between  p-4 rounded-xl  ${className}`}
+    >
+      <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
         {getTitle()}
       </h2>
       <div className="flex gap-2">

@@ -4,21 +4,21 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
-import { Save, ArrowLeft, Loader2, Trash2, Undo2 } from "lucide-react";
+import { Save, ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import Button from "@/components/ui/Button";
-import Modal from "@/components/ui/Modal";
 import { useLookup } from "@/context/LookupContext";
 import { branchService } from "@/api/branchService";
 import { stakeholderService } from "@/api/stakeholderService";
 import { productService } from "@/api/productService";
 import { stockService } from "@/api/stockService";
+import { stockTransactionReturnService } from "@/api/stockTransactionReturnService";
 import {
   BranchDto,
   StakeholderDto,
   ProductDto,
-  CreateStockTransactionDto as UpdateStockTransactionDto,
+  CreateStockTransactionReturnDto,
   FilterOperation,
 } from "@/types";
 
@@ -27,7 +27,7 @@ import TransactionGeneralInfo from "./components/TransactionGeneralInfo";
 import TransactionItemsTable from "./components/TransactionItemsTable";
 import PageHeader from "@/components/shared/PageHeader";
 
-export default function StockTransactionDetailPage() {
+export default function StockTransactionReturnPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation("stock");
@@ -40,8 +40,6 @@ export default function StockTransactionDetailPage() {
   const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const PRODUCTS_PAGE_SIZE = 20;
   const currentSearchRef = useRef<string | undefined>(undefined);
@@ -50,10 +48,10 @@ export default function StockTransactionDetailPage() {
 
   const schema = z.object({
     transactionTypeId: z.string().min(1, t("transaction_type_required")),
-    fromBranchId: z.string().optional(),
-    toBranchId: z.string().optional(),
+    fromBranchId: z.string().min(1, t("branch_required")),
+    toBranchId: z.string().min(1, t("branch_required")),
     supplierId: z.string().optional(),
-    referenceNumber: z.string().min(1, t("reference_number_required")),
+    referenceNumber: z.string().optional(),
     notes: z.string().optional(),
     transactionDate: z.string().min(1, t("date_required")),
     details: z
@@ -81,7 +79,7 @@ export default function StockTransactionDetailPage() {
     },
   });
 
-  const { handleSubmit, watch, reset, getValues, setValue } = methods;
+  const { handleSubmit, watch, reset, getValues } = methods;
 
   const selectedTypeId = watch("transactionTypeId");
   const selectedType = transactionTypes.find(
@@ -205,12 +203,12 @@ export default function StockTransactionDetailPage() {
             // Format for form
             reset({
               transactionTypeId: tData.transactionTypeId,
-              fromBranchId: tData.fromBranchId || undefined,
-              toBranchId: tData.toBranchId || undefined,
+              fromBranchId: tData.fromBranchId || tData.toBranchId || "",
+              toBranchId: tData.toBranchId || tData.fromBranchId || "",
               supplierId: tData.supplierId || undefined,
               referenceNumber: tData.referenceNumber || "",
               notes: tData.notes || "",
-              transactionDate: tData.transactionDate?.split("T")[0] || "",
+              transactionDate: new Date().toISOString().split("T")[0],
               details: initialDetails,
             });
 
@@ -247,47 +245,54 @@ export default function StockTransactionDetailPage() {
     if (!id) return;
     setIsSaving(true);
     try {
-      const dto: UpdateStockTransactionDto = {
-        ...data,
-        oid: id,
+      const dto: CreateStockTransactionReturnDto = {
+        transactionTypeId: data.transactionTypeId,
+        fromBranchId: data.fromBranchId,
+        toBranchId: data.toBranchId,
+        supplierId: data.supplierId || null,
+        referenceNumber: data.referenceNumber || null,
+        notificationId: null,
+        transactionDate: data.transactionDate,
+        notes: data.notes || null,
+        returnInvoiceId: null,
+        originalTransactionId: id,
         status: "PENDING",
         details: data.details.map((d, index) => ({
-          ...d,
-          lineNumber: index + 1,
+          productId: d.productId,
+          quantity: d.quantity,
+          gtin: null,
+          batchNumber: d.batchNumber,
+          expiryDate: d.expiryDate || null,
+          serialNumber: null,
+          unitCost: d.unitCost,
           totalCost: d.quantity * d.unitCost,
+          lineNumber: index + 1,
+          notes: d.notes || null,
         })),
       };
 
-      const res = await stockService.update(id, dto);
+      const res = await stockTransactionReturnService.create(dto);
       if (res.data.success) {
-        toast.success(t("transaction_updated_success"));
+        toast.success(
+          t(
+            "transaction_returned_success",
+            "Return transaction created successfully",
+          ),
+        );
         navigate("/stock/transactions");
       } else {
-        toast.error(res.data.message || t("transaction_failed"));
+        toast.error(
+          res.data.message ||
+            t(
+              "transaction_return_failed",
+              "Failed to create return transaction",
+            ),
+        );
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || t("error_occurred"));
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!id) return;
-    setIsDeleting(true);
-    try {
-      const res = await stockService.delete(id);
-      if (res.data.success) {
-        toast.success(t("delete_success"));
-        navigate("/stock/transactions");
-      } else {
-        toast.error(res.data.message || t("delete_failed"));
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t("error_occurred"));
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteModal(false);
     }
   };
 
@@ -317,31 +322,21 @@ export default function StockTransactionDetailPage() {
   return (
     <div className="w-full mx-auto ">
       <div className="flex items-center gap-4">
-        <PageHeader title={t("edit_transaction")} />
+        <PageHeader title={t("return_transaction", "Return Transaction")} />
       </div>
 
       <FormProvider {...methods}>
         <div className="space-y-4 w-full ">
-          <div className="flex items-center gap-4 px-2 bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-100 p-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/stock/transactions")}
+              onClick={() => navigate(`/stock/transactions/${id}`)}
               className=""
             >
               <ArrowLeft size={20} />
             </Button>
             <TransactionHeader typeCode={typeCode || ""} className="w-full" />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/stock/transactions/${id}/return`)}
-              className="whitespace-nowrap px-4 flex items-center gap-2  text-red-600 underline"
-            >
-              <Undo2 size={20} />
-              {t("return_items", "Return Items")}
-            </Button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -359,68 +354,29 @@ export default function StockTransactionDetailPage() {
               onLoadMoreProducts={handleLoadMoreProducts}
               productsHasMore={productsHasMore}
               isLoadingMoreProducts={isLoadingMoreProducts}
+              showAddProducts={false}
             />
 
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex justify-end items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 gap-3">
               <Button
                 type="button"
-                variant="danger"
-                size="sm"
-                onClick={() => setShowDeleteModal(true)}
-                isLoading={isDeleting}
+                variant="secondary"
+                onClick={() => navigate(`/stock/transactions/${id}`)}
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                type="submit"
+                isLoading={isSaving}
                 className="flex items-center gap-2"
               >
-                <Trash2 size={18} />
-                {t("delete")}
+                <Save size={18} />
+                {t("confirm_return", "Confirm Return")}
               </Button>
-
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => navigate("/stock/transactions")}
-                >
-                  {t("cancel")}
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={isSaving}
-                  className="flex items-center gap-2"
-                >
-                  <Save size={18} />
-                  {t("update_transaction")}
-                </Button>
-              </div>
             </div>
           </form>
         </div>
       </FormProvider>
-
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title={t("delete_confirm_title")}
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">{t("delete_confirm_message")}</p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="secondary"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={isDeleting}
-            >
-              {t("delete")}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
