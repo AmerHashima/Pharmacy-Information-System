@@ -22,6 +22,7 @@ interface TransactionItemsTableProps {
   /** True while the next page of products is in-flight. */
   isLoadingMoreProducts: boolean;
   showAddProducts?: boolean;
+  isViewMode?: boolean;
 }
 
 export default function TransactionItemsTable({
@@ -32,6 +33,7 @@ export default function TransactionItemsTable({
   productsHasMore,
   isLoadingMoreProducts,
   showAddProducts = true,
+  isViewMode = false,
 }: TransactionItemsTableProps) {
   const { t, i18n } = useTranslation("stock");
   const isRtl = i18n.dir() === "rtl";
@@ -48,7 +50,7 @@ export default function TransactionItemsTable({
   const [isScanning, setIsScanning] = useState(false);
 
   const handleGlobalBarcodeScan = async (barcode: string) => {
-    if (!barcode || isScanning) return;
+    if (!barcode || isScanning || isViewMode) return;
     setIsScanning(true);
     try {
       const res = await productService.parseAndGetProduct({
@@ -266,6 +268,7 @@ export default function TransactionItemsTable({
                 onLoadMoreProducts={onLoadMoreProducts}
                 productsHasMore={productsHasMore}
                 isLoadingMoreProducts={isLoadingMoreProducts}
+                isViewMode={isViewMode}
               />
             ))}
           </tbody>

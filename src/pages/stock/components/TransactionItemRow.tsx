@@ -19,6 +19,7 @@ interface TransactionItemRowProps {
   productsHasMore: boolean;
   /** True while the next page of products is in-flight. */
   isLoadingMoreProducts: boolean;
+  isViewMode?: boolean;
 }
 
 export default function TransactionItemRow({
@@ -31,6 +32,7 @@ export default function TransactionItemRow({
   onLoadMoreProducts,
   productsHasMore,
   isLoadingMoreProducts,
+  isViewMode = false,
 }: TransactionItemRowProps) {
   const { t } = useTranslation("stock");
   const {
@@ -73,6 +75,7 @@ export default function TransactionItemRow({
           onLoadMore={onLoadMoreProducts}
           hasMore={productsHasMore}
           isLoadingMore={isLoadingMoreProducts}
+          disabled={isViewMode}
         />
       </td>
 
@@ -89,7 +92,8 @@ export default function TransactionItemRow({
             if (["-", "e", "E"].includes(e.key)) e.preventDefault();
           }}
           error={itemErrors?.quantity?.message}
-          className="bg-transparent border-gray-200 focus:bg-white transition-all"
+          disabled={isViewMode}
+          className="bg-transparent border-gray-200 focus:bg-white transition-all disabled:opacity-75 disabled:cursor-not-allowed"
           {...register(`details.${index}.quantity`, {
             valueAsNumber: true,
             min: 0,
@@ -116,7 +120,8 @@ export default function TransactionItemRow({
             if (["-", "e", "E"].includes(e.key)) e.preventDefault();
           }}
           error={itemErrors?.unitCost?.message}
-          className="bg-transparent border-gray-200 focus:bg-white transition-all"
+          disabled={isViewMode}
+          className="bg-transparent border-gray-200 focus:bg-white transition-all disabled:opacity-75 disabled:cursor-not-allowed"
           {...register(`details.${index}.unitCost`, {
             valueAsNumber: true,
             min: 0,
@@ -136,7 +141,8 @@ export default function TransactionItemRow({
           data-col={3}
           placeholder={t("batch_placeholder")}
           value={watch(`details.${index}.batchNumber`)}
-          className="bg-transparent border-gray-200 focus:bg-white transition-all"
+          disabled={isViewMode}
+          className="bg-transparent border-gray-200 focus:bg-white transition-all disabled:opacity-75 disabled:cursor-not-allowed"
           {...register(`details.${index}.batchNumber`, {
             onChange: (e) => {
               setValue(`details.${index}.batchNumber`, e.target.value);
@@ -151,7 +157,8 @@ export default function TransactionItemRow({
           data-col={4}
           type="date"
           value={watch(`details.${index}.expiryDate`)}
-          className="bg-transparent border-gray-200 focus:bg-white transition-all"
+          disabled={isViewMode}
+          className="bg-transparent border-gray-200 focus:bg-white transition-all disabled:opacity-75 disabled:cursor-not-allowed"
           {...register(`details.${index}.expiryDate`, {
             onChange: (e) => {
               setValue(`details.${index}.expiryDate`, e.target.value);
@@ -161,16 +168,18 @@ export default function TransactionItemRow({
         />
       </td>
       <td className="px-5 py-3 text-right">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => remove(index)}
-          disabled={isRemoveDisabled}
-          className="text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-0"
-        >
-          <Trash2 size={18} />
-        </Button>
+        {!isViewMode && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => remove(index)}
+            disabled={isRemoveDisabled}
+            className="text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-0"
+          >
+            <Trash2 size={18} />
+          </Button>
+        )}
       </td>
     </tr>
   );

@@ -151,11 +151,7 @@ export default function StockTransactionReturns() {
           columns={columns}
           data={data}
           isLoading={isLoading}
-          onRowClick={(row) =>
-            navigate(
-              `/stock/transactions/${row.originalTransactionId || row.oid}`,
-            )
-          }
+          onRowClick={(row) => navigate(`/stock/returns/${row.oid}`)}
         />
         <Pagination
           pageNumber={pageNumber}

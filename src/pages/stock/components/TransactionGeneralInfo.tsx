@@ -9,6 +9,7 @@ interface TransactionGeneralInfoProps {
   transactionTypeOptions: { value: string; label: string }[];
   branchOptions: { value: string; label: string }[];
   supplierOptions: { value: string; label: string }[];
+  isViewMode?: boolean;
 }
 
 export default function TransactionGeneralInfo({
@@ -16,6 +17,7 @@ export default function TransactionGeneralInfo({
   transactionTypeOptions,
   branchOptions,
   supplierOptions,
+  isViewMode = false,
 }: TransactionGeneralInfoProps) {
   const { t } = useTranslation("stock");
   const {
@@ -34,6 +36,7 @@ export default function TransactionGeneralInfo({
           options={transactionTypeOptions}
           value={watch("transactionTypeId")}
           error={(errors.transactionTypeId as any)?.message}
+          disabled={isViewMode}
           {...register("transactionTypeId")}
         />
 
@@ -42,6 +45,7 @@ export default function TransactionGeneralInfo({
           label={t("transaction_date")}
           value={watch("transactionDate")}
           error={(errors.transactionDate as any)?.message}
+          disabled={isViewMode}
           {...register("transactionDate")}
         />
 
@@ -49,6 +53,7 @@ export default function TransactionGeneralInfo({
           label={t("reference_number")}
           value={watch("referenceNumber")}
           error={(errors.referenceNumber as any)?.message}
+          disabled={isViewMode}
           {...register("referenceNumber")}
         />
 
@@ -56,6 +61,7 @@ export default function TransactionGeneralInfo({
           label={t("notes")}
           value={watch("notes")}
           error={(errors.notes as any)?.message}
+          disabled={isViewMode}
           {...register("notes")}
         />
 
@@ -67,6 +73,7 @@ export default function TransactionGeneralInfo({
             options={branchOptions}
             value={watch("toBranchId")}
             error={(errors.toBranchId as any)?.message}
+            disabled={isViewMode}
             {...register("toBranchId")}
           />
         )}
@@ -79,6 +86,7 @@ export default function TransactionGeneralInfo({
             options={branchOptions}
             value={watch("fromBranchId")}
             error={(errors.fromBranchId as any)?.message}
+            disabled={isViewMode}
             {...register("fromBranchId")}
           />
         )}
@@ -90,6 +98,7 @@ export default function TransactionGeneralInfo({
             options={supplierOptions}
             value={watch("supplierId")}
             error={(errors.supplierId as any)?.message}
+            disabled={isViewMode}
             {...register("supplierId")}
           />
         )}
