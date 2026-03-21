@@ -882,6 +882,7 @@ export interface CreateReturnInvoiceDto {
   returnDate: string;
   paymentMethodId: string;
   cashierId: string;
+  returnReasonId: string;
   notes: string | null;
   items: CreateReturnInvoiceItemDto[];
 }
