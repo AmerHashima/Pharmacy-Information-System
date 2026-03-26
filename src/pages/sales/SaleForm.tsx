@@ -5,7 +5,10 @@ import { productService } from "@/api/productService";
 import { salesService } from "@/api/salesService";
 import { lookupService } from "@/api/lookupService";
 import { handleApiError } from "@/utils/handleApiError";
-import { usePaginatedBranches } from "@/hooks/queries";
+import {
+  usePaginatedBranches,
+  usePaginatedProducts,
+} from "@/hooks/queries";
 import {
   ProductDto,
   AppLookupDetailDto,
@@ -35,7 +38,13 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const BRANCHES_PAGE_SIZE = 20;
 
   const [isLoading, setIsLoading] = useState(false);
-  const [products, setProducts] = useState<ProductDto[]>([]);
+  const {
+    options: products,
+    setSearch: handleProductSearch,
+    loadMore: handleLoadMoreProducts,
+    hasMore: productsHasMore,
+    isLoadingMore: isLoadingMoreProducts,
+  } = usePaginatedProducts();
 
   // ── Branches — paginated + TanStack Query cached ──────────────────────────
   const {
@@ -49,10 +58,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
   const [paymentMethods, setPaymentMethods] = useState<AppLookupDetailDto[]>(
     [],
   );
-
-  // Search states
-  const [search, setSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
 
   // General info
   const [selectedBranchId, setSelectedBranchId] = useState("");
@@ -93,36 +98,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     };
     fetchInitialData();
   }, []);
-
-  // ── Debounced Product Search (TanStack cached) ──────────────────────────
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!search.trim()) {
-        setProducts([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const pRes = await productService.query({
-          request: {
-            filters: [
-              new FilterRequest("drugName", search, FilterOperation.Contains),
-            ],
-            sort: [],
-            pagination: { pageNumber: 1, pageSize: 10 },
-          },
-        });
-        setProducts(pRes.data.data?.data || []);
-      } catch (err) {
-        console.error("Failed to search products", err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [search]);
 
   // ── Debounced Branch Search — delegates to hook ──────────────────────────
   // (handleBranchSearch and handleLoadMoreBranches come from usePaginatedBranches)
@@ -187,7 +162,6 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
         },
       ];
     });
-    setSearch("");
   };
 
   const updateQuantity = (productId: string, delta: number) => {
@@ -283,10 +257,11 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-[70vh]">
       <div className="xl:col-span-2 space-y-5 min-w-0">
         <ProductSearch
-          search={search}
-          setSearch={setSearch}
-          isSearching={isSearching}
-          filteredProducts={products}
+          products={products}
+          onSearchChange={handleProductSearch}
+          onLoadMore={handleLoadMoreProducts}
+          hasMore={productsHasMore}
+          isLoadingMore={isLoadingMoreProducts}
           addToCart={addToCart}
           onBarcodeScan={handleBarcodeScan}
           barcodeInputRef={barcodeInputRef}
