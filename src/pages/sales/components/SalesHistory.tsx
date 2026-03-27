@@ -176,14 +176,14 @@ export default function SalesHistory() {
               <Eye className="h-4 w-4" />
             </Button>
           </Link>
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             onClick={() => handlePrintRow(info.row.original)}
             className="text-gray-600  p-0 hover:bg-gray-100"
           >
             <Printer className="h-4 w-4" />
-          </Button>
+          </Button> */}
         </div>
       ),
     },

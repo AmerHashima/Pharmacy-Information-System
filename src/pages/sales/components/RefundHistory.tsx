@@ -50,7 +50,7 @@ export default function RefundHistory() {
   const columns = [
     {
       header: t("refund_number", { defaultValue: "Refund #" }),
-      accessorKey: "returnInvoiceNumber",
+      accessorKey: "returnNumber",
       cell: (info: any) => (
         <span className="font-bold text-red-600 font-mono tracking-tight">
           {info.getValue()}
@@ -71,18 +71,18 @@ export default function RefundHistory() {
         </div>
       ),
     },
-    {
-      header: t("original_invoice", { defaultValue: "Orig. Invoice" }),
-      accessorKey: "originalInvoiceNumber",
-      cell: (info: any) => (
-        <div className="flex items-center gap-1.5">
-          <Hash className="h-3.5 w-3.5 text-gray-400" />
-          <span className="font-medium text-gray-600">
-            {info.getValue() || "---"}
-          </span>
-        </div>
-      ),
-    },
+    // {
+    //   header: t("original_invoice", { defaultValue: "Orig. Invoice" }),
+    //   accessorKey: "originalInvoiceNumber",
+    //   cell: (info: any) => (
+    //     <div className="flex items-center gap-1.5">
+    //       <Hash className="h-3.5 w-3.5 text-gray-400" />
+    //       <span className="font-medium text-gray-600">
+    //         {info.getValue() || "---"}
+    //       </span>
+    //     </div>
+    //   ),
+    // },
     {
       header: t("customer"),
       accessorKey: "customerName",
