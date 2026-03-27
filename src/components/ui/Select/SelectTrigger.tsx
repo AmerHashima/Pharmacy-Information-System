@@ -10,6 +10,7 @@ interface SelectTriggerProps {
   error?: boolean;
   /** Extra data-* attributes forwarded from the outer Select (e.g. data-row). */
   dataAttrs: Record<string, unknown>;
+  placeholder?: string;
   onToggle: () => void;
   onClear: (e: React.MouseEvent) => void;
 }
@@ -20,7 +21,16 @@ interface SelectTriggerProps {
  */
 export const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
   (
-    { selectedOption, isOpen, disabled, error, dataAttrs, onToggle, onClear },
+    {
+      selectedOption,
+      isOpen,
+      disabled,
+      error,
+      dataAttrs,
+      placeholder,
+      onToggle,
+      onClear,
+    },
     ref,
   ) => {
     const { t } = useTranslation("common");
@@ -71,7 +81,9 @@ export const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
               className="h-3 w-4.5 rounded-sm object-cover"
             />
           )}
-          {selectedOption ? selectedOption.label : t("select")}
+          {selectedOption
+            ? selectedOption.label
+            : (placeholder || t("select"))}
         </span>
 
         {/* Clear + chevron */}

@@ -32,6 +32,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       disabled,
       required,
       searchPlaceholder = "Search...",
+      placeholder,
       name,
       onChange,
       onBlur,
@@ -237,6 +238,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           disabled={disabled}
           error={!!error}
           dataAttrs={dataAttrs}
+          placeholder={placeholder}
           onToggle={() => !disabled && setIsOpen((o) => !o)}
           onClear={(e) => clearSelection(e, hiddenSelectRef.current)}
         />

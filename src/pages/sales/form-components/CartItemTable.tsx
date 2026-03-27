@@ -25,7 +25,7 @@ export default function CartItemTable({
   const { t } = useTranslation("sales");
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[420px] flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[620px] flex flex-col">
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
         <h3 className="flex items-center gap-2 font-bold text-gray-700">
           <ShoppingCart className="h-4 w-4" />

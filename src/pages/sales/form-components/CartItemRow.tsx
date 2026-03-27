@@ -97,8 +97,27 @@ export default function CartItemRow({
       </td>
 
       {/* Batch */}
-      {item.batchNumber ? (
-        <td className="px-3 py-3">
+      <td className="px-3 py-3">
+        {item.product.gtin ? (
+          <SelectBatch
+            gtin={item.product.gtin}
+            onSelect={(batch) => {
+              updateCartItem(
+                item.product.oid,
+                "batchNumber",
+                batch.batchNumber || "",
+              );
+              if (batch.expiryDate) {
+                updateCartItem(
+                  item.product.oid,
+                  "expiryDate",
+                  new Date(batch.expiryDate).toISOString().split("T")[0],
+                );
+              }
+            }}
+            placeholder={item.batchNumber || "—"}
+          />
+        ) : (
           <input
             type="text"
             value={item.batchNumber}
@@ -108,10 +127,8 @@ export default function CartItemRow({
             className="w-24 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="—"
           />
-        </td>
-      ) : (
-        item.product.gtin && <SelectBatch gtin={item.product.gtin} />
-      )}
+        )}
+      </td>
 
       {/* Expiry */}
       <td className="px-3 py-3">

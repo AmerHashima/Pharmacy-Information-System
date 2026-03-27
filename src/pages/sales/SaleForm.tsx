@@ -5,10 +5,7 @@ import { productService } from "@/api/productService";
 import { salesService } from "@/api/salesService";
 import { lookupService } from "@/api/lookupService";
 import { handleApiError } from "@/utils/handleApiError";
-import {
-  usePaginatedBranches,
-  usePaginatedProducts,
-} from "@/hooks/queries";
+import { usePaginatedBranches, usePaginatedProducts } from "@/hooks/queries";
 import {
   ProductDto,
   AppLookupDetailDto,

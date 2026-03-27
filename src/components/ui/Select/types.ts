@@ -45,6 +45,8 @@ export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> &
     error?: string;
     options: SelectOption[];
     searchPlaceholder?: string;
+    /** The text to show when no option is selected. */
+    placeholder?: string;
     /** Called on every keystroke in the search box (debounce in parent). */
     onSearchChange?: (search: string) => void;
   };
