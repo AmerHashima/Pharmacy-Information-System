@@ -1,6 +1,7 @@
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CartItem } from "../SaleForm";
+import SelectBatch from "./SelectBatch";
 
 interface CartItemRowProps {
   item: CartItem;
@@ -96,17 +97,21 @@ export default function CartItemRow({
       </td>
 
       {/* Batch */}
-      <td className="px-3 py-3">
-        <input
-          type="text"
-          value={item.batchNumber}
-          onChange={(e) =>
-            updateCartItem(item.product.oid, "batchNumber", e.target.value)
-          }
-          className="w-24 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-          placeholder="—"
-        />
-      </td>
+      {item.batchNumber ? (
+        <td className="px-3 py-3">
+          <input
+            type="text"
+            value={item.batchNumber}
+            onChange={(e) =>
+              updateCartItem(item.product.oid, "batchNumber", e.target.value)
+            }
+            className="w-24 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            placeholder="—"
+          />
+        </td>
+      ) : (
+        item.product.gtin && <SelectBatch gtin={item.product.gtin} />
+      )}
 
       {/* Expiry */}
       <td className="px-3 py-3">

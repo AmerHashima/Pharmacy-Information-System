@@ -494,6 +494,7 @@ export interface StockDto {
   minStockLevel?: number;
   expiryDate?: string;
   status: number | null;
+  batchNumber: string | null;
 }
 
 export interface StockTransactionDto {
