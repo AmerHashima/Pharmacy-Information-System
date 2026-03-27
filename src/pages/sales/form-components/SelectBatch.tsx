@@ -20,7 +20,7 @@ const SelectBatch = ({ gtin, onSelect, placeholder }: Props) => {
     try {
       const res = await stockService.query({
         request: {
-          filters: [{ propertyName: "productGTIN", value: gtin, operation: 0 }],
+          filters: [{ propertyName: "productGTIN", value: gtin, operation: 2 }],
           pagination: {
             pageNumber: 1,
             pageSize: 50,
@@ -31,13 +31,18 @@ const SelectBatch = ({ gtin, onSelect, placeholder }: Props) => {
             "batchNumber",
             "branchId",
             "branchName",
+            "quantity",
+            "reservedQuantity",
+            "availableQuantity",
             "oid",
             "availableQuantity",
             "expiryDate",
           ],
         },
       });
-      setBatches(res.data.data.data || []);
+      setBatches(
+        res.data.data.data.filter((b) => b.availableQuantity > 0) || [],
+      );
     } catch (err) {
       console.error("Failed to fetch batches", err);
     } finally {
@@ -54,7 +59,7 @@ const SelectBatch = ({ gtin, onSelect, placeholder }: Props) => {
   //old label =>  (${t("stock")}: ${batch.availableQuantity}) - ${batch.branchName}
   const options = batches.map((batch) => ({
     value: batch.oid,
-    label: `${batch.batchNumber}`,
+    label: `${batch.batchNumber} - (${t("stock")}: ${batch.availableQuantity})`,
   }));
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
