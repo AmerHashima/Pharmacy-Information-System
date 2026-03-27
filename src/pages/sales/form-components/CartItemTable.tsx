@@ -9,8 +9,8 @@ interface CartItemTableProps {
   updateQuantity: (productId: string, delta: number) => void;
   updateCartItem: (
     productId: string,
-    field: keyof CartItem,
-    value: any,
+    fieldOrUpdate: keyof CartItem | Partial<CartItem>,
+    value?: any,
   ) => void;
   removeFromCart: (productId: string) => void;
 }

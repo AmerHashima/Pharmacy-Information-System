@@ -8,8 +8,8 @@ interface CartItemRowProps {
   updateQuantity: (productId: string, delta: number) => void;
   updateCartItem: (
     productId: string,
-    field: keyof CartItem,
-    value: any,
+    fieldOrUpdate: keyof CartItem | Partial<CartItem>,
+    value?: any,
   ) => void;
   removeFromCart: (productId: string) => void;
 }
@@ -102,18 +102,15 @@ export default function CartItemRow({
           <SelectBatch
             gtin={item.product.gtin}
             onSelect={(batch) => {
-              updateCartItem(
-                item.product.oid,
-                "batchNumber",
-                batch.batchNumber || "",
-              );
+              const updates: Partial<CartItem> = {
+                batchNumber: batch.batchNumber || "",
+              };
               if (batch.expiryDate) {
-                updateCartItem(
-                  item.product.oid,
-                  "expiryDate",
-                  new Date(batch.expiryDate).toISOString().split("T")[0],
-                );
+                updates.expiryDate = new Date(batch.expiryDate)
+                  .toISOString()
+                  .split("T")[0];
               }
+              updateCartItem(item.product.oid, updates);
             }}
             placeholder={item.batchNumber || "—"}
           />

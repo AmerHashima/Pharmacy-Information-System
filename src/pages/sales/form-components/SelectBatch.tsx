@@ -59,7 +59,7 @@ const SelectBatch = ({ gtin, onSelect, placeholder }: Props) => {
   //old label =>  (${t("stock")}: ${batch.availableQuantity}) - ${batch.branchName}
   const options = batches.map((batch) => ({
     value: batch.oid,
-    label: `${batch.batchNumber} - (${t("stock")}: ${batch.availableQuantity})`,
+    label: `${batch.batchNumber}`,
   }));
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

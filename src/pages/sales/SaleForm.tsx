@@ -175,13 +175,18 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
 
   const updateCartItem = (
     productId: string,
-    field: keyof CartItem,
-    value: any,
+    fieldOrUpdate: keyof CartItem | Partial<CartItem>,
+    value?: any,
   ) => {
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.oid === productId ? { ...item, [field]: value } : item,
-      ),
+      prev.map((item) => {
+        if (item.product.oid !== productId) return item;
+
+        if (typeof fieldOrUpdate === "object") {
+          return { ...item, ...fieldOrUpdate };
+        }
+        return { ...item, [fieldOrUpdate]: value };
+      }),
     );
   };
 
