@@ -107,6 +107,13 @@ export default function StockLevels() {
       ),
     },
     {
+      header: t("BatchNumber"),
+      accessorKey: "batchNumber",
+      cell: (info: any) => (
+        <span className="text-gray-400 font-bold">{info.getValue() || 0}</span>
+      ),
+    },
+    {
       header: t("expiry"),
       accessorKey: "expiryDate",
       cell: (info: any) => (
