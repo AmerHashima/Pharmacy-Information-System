@@ -75,5 +75,10 @@
   "new_sale": "بيع جديد",
   "generalInfo": "المعلومات العامة",
   "prescriptionInfo": "معلومات الوصفة",
-  "itemNotes": "ملاحظات العنصر"
+  "itemNotes": "ملاحظات العنصر",
+  "enter_serials": "إدخال الأرقام التسلسلية",
+  "serials": "سيريال",
+  "serial_notice": "يرجى إدخال ما يصل إلى {{count}} من الأرقام التسلسلية لهذا العنصر.",
+  "confirm": "تأكيد",
+  "cancel": "إلغاء"
 }

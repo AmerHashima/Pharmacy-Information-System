@@ -25,7 +25,7 @@ export interface CartItem {
   unitPrice: number;
   discountPercent: number;
   batchNumber: string;
-  serialNumber: string;
+  serialNumbers: string[];
   expiryDate: string;
   notes: string;
 }
@@ -113,7 +113,7 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
         if (prod) {
           addToCart(prod, {
             batchNumber: barcodeData?.batchNumber || "",
-            serialNumber: barcodeData?.serialNumber || "",
+            serialNumbers: barcodeData?.serialNumber ? [barcodeData.serialNumber] : [],
             expiryDate: barcodeData?.expiryDate
               ? new Date(barcodeData.expiryDate).toISOString().split("T")[0]
               : "",
@@ -132,7 +132,7 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
     product: ProductDto,
     extra?: {
       batchNumber?: string;
-      serialNumber?: string;
+      serialNumbers?: string[];
       expiryDate?: string;
     },
   ) => {
@@ -153,7 +153,7 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
           unitPrice: product.price || 0,
           discountPercent: 0,
           batchNumber: extra?.batchNumber || "",
-          serialNumber: extra?.serialNumber || "",
+          serialNumbers: extra?.serialNumbers || [],
           expiryDate: extra?.expiryDate || "",
           notes: "",
         },
@@ -230,18 +230,56 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
         prescriptionNumber: prescriptionNumber || undefined,
         doctorName: doctorName || undefined,
         notes: notes || undefined,
-        items: cart.map((item) => ({
-          productId: item.product.oid,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discountPercent: item.discountPercent || undefined,
-          batchNumber: item.batchNumber || undefined,
-          serialNumber: item.serialNumber || undefined,
-          expiryDate: item.expiryDate
-            ? new Date(item.expiryDate).toISOString()
-            : undefined,
-          notes: item.notes || undefined,
-        })),
+        items: cart.flatMap((item) => {
+          // If we have multiple serial numbers, split into multiple line items with qty 1
+          if (item.serialNumbers && item.serialNumbers.length > 0) {
+            const serializedItems = item.serialNumbers.map((sn) => ({
+              productId: item.product.oid,
+              quantity: 1,
+              unitPrice: item.unitPrice,
+              discountPercent: item.discountPercent || undefined,
+              batchNumber: item.batchNumber || undefined,
+              serialNumber: sn || undefined,
+              expiryDate: item.expiryDate
+                ? new Date(item.expiryDate).toISOString()
+                : undefined,
+              notes: item.notes || undefined,
+            }));
+
+            // If quantity > serialNumbers.length, the remainder stays as a non-serialized item
+            if (item.quantity > item.serialNumbers.length) {
+              serializedItems.push({
+                productId: item.product.oid,
+                quantity: item.quantity - item.serialNumbers.length,
+                unitPrice: item.unitPrice,
+                discountPercent: item.discountPercent || undefined,
+                batchNumber: item.batchNumber || undefined,
+                serialNumber: undefined,
+                expiryDate: item.expiryDate
+                  ? new Date(item.expiryDate).toISOString()
+                  : undefined,
+                notes: item.notes || undefined,
+              });
+            }
+            return serializedItems;
+          }
+
+          // Default case: single item entry
+          return [
+            {
+              productId: item.product.oid,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              discountPercent: item.discountPercent || undefined,
+              batchNumber: item.batchNumber || undefined,
+              serialNumber: undefined,
+              expiryDate: item.expiryDate
+                ? new Date(item.expiryDate).toISOString()
+                : undefined,
+              notes: item.notes || undefined,
+            },
+          ];
+        }),
       };
 
       await salesService.create(dto);

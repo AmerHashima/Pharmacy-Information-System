@@ -75,5 +75,10 @@
   "new_sale": "New Sale",
   "generalInfo": "General Information",
   "prescriptionInfo": "Prescription Info",
-  "itemNotes": "Item Notes"
+  "itemNotes": "Item Notes",
+  "enter_serials": "Enter Serial Numbers",
+  "serials": "serials",
+  "serial_notice": "Please enter up to {{count}} serial numbers for this item.",
+  "confirm": "Confirm",
+  "cancel": "Cancel"
 }
