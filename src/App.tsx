@@ -10,10 +10,15 @@ import BranchesPage from "@/pages/branches/BranchesPage";
 import ProductsPage from "@/pages/products/ProductsPage";
 import RolesPage from "@/pages/roles/RolesPage";
 import SalesPage from "@/pages/sales/SalesPage";
+import SalesHistoryPage from "@/pages/sales/SalesHistoryPage";
+import RefundHistoryPage from "@/pages/sales/RefundHistoryPage";
 import SaleDetailPage from "@/pages/sales/SaleDetailPage";
 import RefundDetailPage from "@/pages/sales/RefundDetailPage";
 import StakeholdersPage from "@/pages/stakeholders/StakeholdersPage";
 import StockPage from "@/pages/stock/StockPage";
+import StockHistoryPage from "@/pages/stock/StockHistoryPage";
+import StockLevelsPage from "@/pages/stock/StockLevelsPage";
+import StockReturnsPage from "@/pages/stock/StockReturnsPage";
 import StockTransactionsPage from "@/pages/stock/StockTransactionsPage";
 import UsersPage from "@/pages/users/UsersPage";
 import LookupsPage from "@/pages/lookups/LookupsPage";
@@ -23,16 +28,17 @@ import IntegrationProvidersPage from "@/pages/integrations/IntegrationProvidersP
 import BranchIntegrationsPage from "@/pages/integrations/BranchIntegrationsPage";
 import RsdLogsPage from "@/pages/rsd/RsdLogsPage";
 import ProductFormPage from "@/pages/products/ProductFormPage";
+import { LookupProvider } from "@/context/LookupContext";
+import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
+import StockTransactionReturnPage from "./pages/stock/StockTransactionReturnPage";
+import StockTransactionReturnDetailPage from "./pages/stock/StockTransactionReturnDetailPage";
+import PermissionGate from "@/components/shared/PermissionGate";
+import { PERMISSIONS } from "@/config/permissions";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
-
-import { LookupProvider } from "@/context/LookupContext";
-import StockTransactionDetailPage from "./pages/stock/StockTransactionDetailPage";
-import StockTransactionReturnPage from "./pages/stock/StockTransactionReturnPage";
-import StockTransactionReturnDetailPage from "./pages/stock/StockTransactionReturnDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -59,11 +65,21 @@ export default function App() {
             <Route path="products/new" element={<ProductFormPage />} />
             <Route path="products/edit/:id" element={<ProductFormPage />} />
             <Route path="roles" element={<RolesPage />} />
+
+            {/* Sales routes */}
             <Route path="sales" element={<SalesPage />} />
+            <Route path="sales/history" element={<SalesHistoryPage />} />
+            <Route path="sales/refunds" element={<RefundHistoryPage />} />
             <Route path="sales/:id" element={<SaleDetailPage />} />
             <Route path="sales/refund/:id" element={<RefundDetailPage />} />
+
             <Route path="stakeholders" element={<StakeholdersPage />} />
+
+            {/* Stock routes */}
             <Route path="stock" element={<StockPage />} />
+            <Route path="stock/history" element={<StockHistoryPage />} />
+            <Route path="stock/levels" element={<StockLevelsPage />} />
+            <Route path="stock/returns" element={<StockReturnsPage />} />
             <Route
               path="stock/transactions"
               element={<StockTransactionsPage />}
@@ -80,11 +96,15 @@ export default function App() {
               path="stock/returns/:id"
               element={<StockTransactionReturnDetailPage />}
             />
+
             <Route path="rsd" element={<RSDPage />} />
             <Route path="rsd/logs" element={<RsdLogsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="lookups" element={<LookupsPage />} />
-            <Route path="lookups/:lookupCode" element={<LookupDetailPage />} />
+            <Route
+              path="lookups/:lookupCode"
+              element={<LookupDetailPage />}
+            />
             <Route
               path="integrations/providers"
               element={<IntegrationProvidersPage />}
