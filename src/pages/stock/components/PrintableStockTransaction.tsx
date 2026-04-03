@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { format } from "date-fns";
+import { QRCodeSVG } from "qrcode.react";
 import { StockTransactionResponseDto } from "@/types";
 
 interface PrintableStockTransactionProps {
@@ -156,6 +157,15 @@ const PrintableStockTransaction = forwardRef<
             إجمالي القيمة
           </span>
         </div>
+      </div>
+
+      {/* QR Code */}
+      <div className="flex justify-center pt-6 pb-4">
+        <QRCodeSVG
+          value={transactionData.oid || transactionData.referenceNumber || "N/A"}
+          size={128}
+          level="M"
+        />
       </div>
 
       {/* Footer */}

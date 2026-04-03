@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { format } from "date-fns";
+import { QRCodeSVG } from "qrcode.react";
 import { SalesInvoiceDto } from "@/types";
 
 interface PrintableInvoiceProps {
@@ -194,14 +195,13 @@ const PrintableInvoice = forwardRef<HTMLDivElement, PrintableInvoiceProps>(
           </div>
         </div>
 
-        {/* QR Code Placeholder */}
+        {/* QR Code */}
         <div className="flex justify-center pt-6 pb-4">
-          <div className="w-32 h-32 border-2 border-black flex items-center justify-center bg-gray-50 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-20 bg-[url('https://www.qr-code-generator.com/wp-content/themes/qr/new_structure/markets/core_market/generator/dist/generator/assets/images/dynamic-qr-code.png')] bg-cover"></div>
-            <span className="font-bold text-[10px] z-10 text-center px-1">
-              QR CODE PLACEHOLDER
-            </span>
-          </div>
+          <QRCodeSVG
+            value={invoice.oid || invoice.invoiceNumber || "N/A"}
+            size={128}
+            level="M"
+          />
         </div>
 
         {/* Footer */}
