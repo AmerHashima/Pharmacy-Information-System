@@ -39,6 +39,11 @@ export default function RefundHistory() {
         value: searchTerm,
         operation: FilterOperation.Contains,
       });
+      filters.push({
+        propertyName: "originalInvoiceNumber",
+        value: searchTerm,
+        operation: FilterOperation.Contains,
+      });
     }
     fetch("", filters);
   }, [fetch, searchTerm]);

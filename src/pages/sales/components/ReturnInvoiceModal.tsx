@@ -185,7 +185,7 @@ export default function ReturnInvoiceModal({
                     </p>
                   </td>
                   <td className="px-4 py-4 text-center font-medium text-gray-600">
-                    {item.quantity}
+                    {item.remainingQuantity}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center justify-center gap-1">
@@ -194,7 +194,7 @@ export default function ReturnInvoiceModal({
                           handleQtyChange(
                             item.oid,
                             (returnQuantities[item.oid] || 0) - 1,
-                            item.quantity,
+                            item.remainingQuantity,
                           )
                         }
                         className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500"
@@ -205,13 +205,13 @@ export default function ReturnInvoiceModal({
                       <input
                         type="number"
                         min="0"
-                        max={item.quantity}
+                        max={item.remainingQuantity}
                         value={returnQuantities[item.oid] || 0}
                         onChange={(e) =>
                           handleQtyChange(
                             item.oid,
                             parseInt(e.target.value) || 0,
-                            item.quantity,
+                            item.remainingQuantity,
                           )
                         }
                         className="w-12 text-center bg-transparent font-bold text-gray-900 border-none focus:ring-0 p-0"
@@ -221,7 +221,7 @@ export default function ReturnInvoiceModal({
                           handleQtyChange(
                             item.oid,
                             (returnQuantities[item.oid] || 0) + 1,
-                            item.quantity,
+                            item.remainingQuantity,
                           )
                         }
                         className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500"

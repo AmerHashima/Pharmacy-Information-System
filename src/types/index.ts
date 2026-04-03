@@ -428,6 +428,7 @@ export interface SalesInvoiceItemDto {
   productName: string | null;
   productGTIN: string | null;
   quantity: number;
+  remainingQuantity: number;
   unitPrice: number;
   taxAmount?: number;
   totalPrice: number;

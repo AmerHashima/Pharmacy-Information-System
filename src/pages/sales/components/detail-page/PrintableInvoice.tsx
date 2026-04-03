@@ -113,7 +113,7 @@ const PrintableInvoice = forwardRef<HTMLDivElement, PrintableInvoiceProps>(
               key={idx}
               className="grid grid-cols-12 py-1 text-center items-center"
             >
-              <div className="col-span-2">{item.quantity}</div>
+              <div className="col-span-2">{item.remainingQuantity}</div>
               <div className="col-span-6 text-left px-2">
                 <div className="font-medium">{item.productName}</div>
                 <div className="text-[10px] text-gray-500">.</div>

@@ -46,13 +46,13 @@ export default function InvoiceItemsTable({ invoice }: InvoiceItemsTableProps) {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center font-medium text-gray-700">
-                  {item.quantity}
+                  {item.remainingQuantity}
                 </td>
                 <td className="px-6 py-4 text-right font-medium text-gray-600">
                   ${item.unitPrice?.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 text-right font-bold text-gray-900">
-                  ${(item.quantity * (item.unitPrice || 0)).toFixed(2)}
+                  ${(item.remainingQuantity * (item.unitPrice || 0)).toFixed(2)}
                 </td>
               </tr>
             ))}
