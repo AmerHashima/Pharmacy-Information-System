@@ -35,7 +35,7 @@ export default function RefundHistory() {
     const filters = [];
     if (searchTerm) {
       filters.push({
-        propertyName: "returnInvoiceNumber",
+        propertyName: "returnNumber",
         value: searchTerm,
         operation: FilterOperation.Contains,
       });
