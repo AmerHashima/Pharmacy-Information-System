@@ -245,6 +245,21 @@ export interface UpdateBranchDto extends CreateBranchDto {
   oid: string;
 }
 
+// ─── Store ────────────────────────────────────────────────────────────────────
+export interface StoreDto {
+  oid: string;
+  storeCode: string;
+  storeName: string;
+  description: string | null;
+  address: string | null;
+  phoneNumber: string | null;
+  isActive: boolean;
+  branchId: string;
+  branchName: string | null;
+  status: number;
+  createdAt: string;
+}
+
 // ─── Product ──────────────────────────────────────────────────────────────────
 
 export interface ProductDto {
