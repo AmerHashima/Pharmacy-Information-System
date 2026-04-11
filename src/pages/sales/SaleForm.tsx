@@ -1,352 +1,105 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import toast from "react-hot-toast";
-import { useTranslation } from "react-i18next";
-import { productService } from "@/api/productService";
-import { salesService } from "@/api/salesService";
-import { lookupService } from "@/api/lookupService";
-import { handleApiError } from "@/utils/handleApiError";
-import { usePaginatedBranches, usePaginatedProducts } from "@/hooks/queries";
-import {
-  ProductDto,
-  AppLookupDetailDto,
-  CreateSalesInvoiceDto,
-  FilterOperation,
-  FilterRequest,
-} from "@/types";
+import { useSaleForm, usePrescriptionAnalysis } from "./hooks";
 
 import SaleGeneralInfo from "./form-components/SaleGeneralInfo";
 import ProductSearch from "./form-components/ProductSearch";
 import CartItemTable from "./form-components/CartItemTable";
 import OrderSummary from "./form-components/OrderSummary";
+import AiPrescriptionButton from "./form-components/AiPrescriptionButton";
+import AnalyzingBanner from "./form-components/AnalyzingBanner";
+import { PrescriptionAnalysisModal } from "./form-components/prescription";
 
-export interface CartItem {
-  product: ProductDto;
-  quantity: number;
-  unitPrice: number;
-  discountPercent: number;
-  batchNumber: string;
-  serialNumbers: string[];
-  expiryDate: string;
-  notes: string;
-}
+export type { CartItem } from "./hooks";
 
 export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
-  const { t } = useTranslation("sales");
-  const BRANCHES_PAGE_SIZE = 20;
+  const sale = useSaleForm(onSuccess);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const {
-    options: products,
-    setSearch: handleProductSearch,
-    loadMore: handleLoadMoreProducts,
-    hasMore: productsHasMore,
-    isLoadingMore: isLoadingMoreProducts,
-  } = usePaginatedProducts();
-
-  // ── Branches — paginated + TanStack Query cached ──────────────────────────
-  const {
-    options: branches,
-    setSearch: handleBranchSearch,
-    loadMore: handleLoadMoreBranches,
-    hasMore: branchesHasMore,
-    isLoadingMore: isLoadingMoreBranches,
-  } = usePaginatedBranches();
-
-  const [paymentMethods, setPaymentMethods] = useState<AppLookupDetailDto[]>(
-    [],
-  );
-
-  // General info
-  const [selectedBranchId, setSelectedBranchId] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [prescriptionNumber, setPrescriptionNumber] = useState("");
-  const [doctorName, setDoctorName] = useState("");
-  const [notes, setNotes] = useState("");
-
-  // Payment
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState("");
-
-  // Cart
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  const [isDataLoading, setIsDataLoading] = useState(false);
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Payment methods (lookup — runs once, kept as-is) ─────────────────────
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const lRes = await lookupService.getByCode("PAYMENT_METHOD");
-        const methods = lRes.data.data?.lookupDetails || [];
-        setPaymentMethods(methods);
-        const cashMethod = methods.find(
-          (m) =>
-            m.lookupDetailCode?.toLowerCase() === "cash" ||
-            m.valueNameEn?.toLowerCase() === "cash",
-        );
-        if (cashMethod) setSelectedPaymentMethodId(cashMethod.oid);
-        else if (methods.length > 0) setSelectedPaymentMethodId(methods[0].oid);
-      } catch (err) {
-        console.error("Failed to fetch payment methods", err);
-      }
-    };
-    fetchInitialData();
-  }, []);
-
-  // ── Debounced Branch Search — delegates to hook ──────────────────────────
-  // (handleBranchSearch and handleLoadMoreBranches come from usePaginatedBranches)
-
-  // QR/Barcode scan handler
-  const handleBarcodeScan = async (barcode: string) => {
-    if (!barcode.trim()) return;
-    try {
-      const res = await productService.parseAndGetProduct({
-        barcodeInput: barcode,
-      });
-      if (res.data.success && res.data.data?.productFound) {
-        const prod = res.data.data.product;
-        const barcodeData = res.data.data.barcodeData;
-
-        if (prod) {
-          addToCart(prod, {
-            batchNumber: barcodeData?.batchNumber || "",
-            serialNumbers: barcodeData?.serialNumber ? [barcodeData.serialNumber] : [],
-            expiryDate: barcodeData?.expiryDate
-              ? new Date(barcodeData.expiryDate).toISOString().split("T")[0]
-              : "",
-          });
-          toast.success(t("productFound"));
-        }
-      } else {
-        toast.error(res.data.data?.productMessage || t("productNotFound"));
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t("productNotFound"));
-    }
-  };
-
-  const addToCart = (
-    product: ProductDto,
-    extra?: {
-      batchNumber?: string;
-      serialNumbers?: string[];
-      expiryDate?: string;
-    },
-  ) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.oid === product.oid);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.oid === product.oid
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        );
-      }
-      return [
-        ...prev,
-        {
-          product,
-          quantity: 1,
-          unitPrice: product.price || 0,
-          discountPercent: 0,
-          batchNumber: extra?.batchNumber || "",
-          serialNumbers: extra?.serialNumbers || [],
-          expiryDate: extra?.expiryDate || "",
-          notes: "",
-        },
-      ];
-    });
-  };
-
-  const updateQuantity = (productId: string, delta: number) => {
-    setCart((prev) =>
-      prev.map((item) => {
-        if (item.product.oid === productId) {
-          const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      }),
-    );
-  };
-
-  const updateCartItem = (
-    productId: string,
-    fieldOrUpdate: keyof CartItem | Partial<CartItem>,
-    value?: any,
-  ) => {
-    setCart((prev) =>
-      prev.map((item) => {
-        if (item.product.oid !== productId) return item;
-
-        if (typeof fieldOrUpdate === "object") {
-          return { ...item, ...fieldOrUpdate };
-        }
-        return { ...item, [fieldOrUpdate]: value };
-      }),
-    );
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.oid !== productId));
-  };
-
-  const totals = useMemo(() => {
-    const subtotal = cart.reduce((acc, item) => {
-      const lineTotal = item.quantity * item.unitPrice;
-      const lineDiscount = lineTotal * (item.discountPercent / 100);
-      return acc + (lineTotal - lineDiscount);
-    }, 0);
-    const overallDiscount = subtotal * (discountPercent / 100);
-    const afterDiscount = subtotal - overallDiscount;
-    const tax = afterDiscount * 0.15;
-    const total = afterDiscount + tax;
-    return { subtotal, tax, total, overallDiscount };
-  }, [cart, discountPercent]);
-
-  const handleSubmit = async () => {
-    if (cart.length === 0) {
-      toast.error(t("cart_empty"));
-      return;
-    }
-    if (!selectedBranchId) {
-      toast.error(t("branch_required"));
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const dto: CreateSalesInvoiceDto = {
-        branchId: selectedBranchId,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        customerEmail: customerEmail || undefined,
-        discountPercent: discountPercent || undefined,
-        invoiceDate: new Date().toISOString(),
-        paymentMethodId: selectedPaymentMethodId || undefined,
-        prescriptionNumber: prescriptionNumber || undefined,
-        doctorName: doctorName || undefined,
-        notes: notes || undefined,
-        items: cart.flatMap((item) => {
-          // If we have multiple serial numbers, split into multiple line items with qty 1
-          if (item.serialNumbers && item.serialNumbers.length > 0) {
-            const serializedItems = item.serialNumbers.map((sn) => ({
-              productId: item.product.oid,
-              quantity: 1,
-              unitPrice: item.unitPrice,
-              discountPercent: item.discountPercent || undefined,
-              batchNumber: item.batchNumber || undefined,
-              serialNumber: sn || undefined,
-              expiryDate: item.expiryDate
-                ? new Date(item.expiryDate).toISOString()
-                : undefined,
-              notes: item.notes || undefined,
-            }));
-
-            // If quantity > serialNumbers.length, the remainder stays as a non-serialized item
-            if (item.quantity > item.serialNumbers.length) {
-              serializedItems.push({
-                productId: item.product.oid,
-                quantity: item.quantity - item.serialNumbers.length,
-                unitPrice: item.unitPrice,
-                discountPercent: item.discountPercent || undefined,
-                batchNumber: item.batchNumber || undefined,
-                serialNumber: undefined,
-                expiryDate: item.expiryDate
-                  ? new Date(item.expiryDate).toISOString()
-                  : undefined,
-                notes: item.notes || undefined,
-              });
-            }
-            return serializedItems;
-          }
-
-          // Default case: single item entry
-          return [
-            {
-              productId: item.product.oid,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              discountPercent: item.discountPercent || undefined,
-              batchNumber: item.batchNumber || undefined,
-              serialNumber: undefined,
-              expiryDate: item.expiryDate
-                ? new Date(item.expiryDate).toISOString()
-                : undefined,
-              notes: item.notes || undefined,
-            },
-          ];
-        }),
-      };
-
-      await salesService.create(dto);
-      toast.success(t("sale_success"));
-      setCart([]);
-      onSuccess();
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const rx = usePrescriptionAnalysis({ addToCart: sale.addToCart });
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-[70vh]">
-      <div className="xl:col-span-2 space-y-5 min-w-0">
-        <ProductSearch
-          products={products}
-          onSearchChange={handleProductSearch}
-          onLoadMore={handleLoadMoreProducts}
-          hasMore={productsHasMore}
-          isLoadingMore={isLoadingMoreProducts}
-          addToCart={addToCart}
-          onBarcodeScan={handleBarcodeScan}
-          barcodeInputRef={barcodeInputRef}
-        />
-        <CartItemTable
-          cart={cart}
-          setCart={setCart}
-          updateQuantity={updateQuantity}
-          updateCartItem={updateCartItem}
-          removeFromCart={removeFromCart}
-        />
-        <SaleGeneralInfo
-          selectedBranchId={selectedBranchId}
-          setSelectedBranchId={setSelectedBranchId}
-          customerName={customerName}
-          setCustomerName={setCustomerName}
-          customerPhone={customerPhone}
-          setCustomerPhone={setCustomerPhone}
-          customerEmail={customerEmail}
-          setCustomerEmail={setCustomerEmail}
-          prescriptionNumber={prescriptionNumber}
-          setPrescriptionNumber={setPrescriptionNumber}
-          doctorName={doctorName}
-          setDoctorName={setDoctorName}
-          notes={notes}
-          setNotes={setNotes}
-          branches={branches}
-          handleBranchSearch={handleBranchSearch}
-          onLoadMoreBranches={handleLoadMoreBranches}
-          branchesHasMore={branchesHasMore}
-          isLoadingMoreBranches={isLoadingMoreBranches}
+    <div className="space-y-5">
+      {/* ── Row 1: Product Search + AI Button (full width) ── */}
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <ProductSearch
+            products={sale.products}
+            onSearchChange={sale.handleProductSearch}
+            onLoadMore={sale.handleLoadMoreProducts}
+            hasMore={sale.productsHasMore}
+            isLoadingMore={sale.isLoadingMoreProducts}
+            addToCart={sale.addToCart}
+            onBarcodeScan={sale.handleBarcodeScan}
+            barcodeInputRef={sale.barcodeInputRef}
+          />
+        </div>
+
+        <AiPrescriptionButton
+          isAnalyzing={rx.isAnalyzing}
+          prescriptionInputRef={rx.prescriptionInputRef}
+          onUpload={rx.handlePrescriptionUpload}
+          onClickTrigger={rx.openFilePicker}
         />
       </div>
 
-      <OrderSummary
-        totals={totals}
-        paymentMethods={paymentMethods}
-        selectedPaymentMethodId={selectedPaymentMethodId}
-        setSelectedPaymentMethodId={setSelectedPaymentMethodId}
-        discountPercent={discountPercent}
-        setDiscountPercent={setDiscountPercent}
-        handleSubmit={handleSubmit}
-        isLoading={isLoading}
-        cartLength={cart.length}
+      {/* ── Analyzing Overlay Banner ── */}
+      {rx.isAnalyzing && <AnalyzingBanner />}
+
+      {/* ── Row 2: Cart Items (full width) ── */}
+      <CartItemTable
+        cart={sale.cart}
+        setCart={sale.setCart}
+        updateQuantity={sale.updateQuantity}
+        updateCartItem={sale.updateCartItem}
+        removeFromCart={sale.removeFromCart}
       />
+
+      {/* ── Row 3: General Info + Order Summary (side by side) ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 min-w-0">
+          <SaleGeneralInfo
+            selectedBranchId={sale.selectedBranchId}
+            setSelectedBranchId={sale.setSelectedBranchId}
+            customerName={sale.customerName}
+            setCustomerName={sale.setCustomerName}
+            customerPhone={sale.customerPhone}
+            setCustomerPhone={sale.setCustomerPhone}
+            customerEmail={sale.customerEmail}
+            setCustomerEmail={sale.setCustomerEmail}
+            prescriptionNumber={sale.prescriptionNumber}
+            setPrescriptionNumber={sale.setPrescriptionNumber}
+            doctorName={sale.doctorName}
+            setDoctorName={sale.setDoctorName}
+            notes={sale.notes}
+            setNotes={sale.setNotes}
+            branches={sale.branches}
+            handleBranchSearch={sale.handleBranchSearch}
+            onLoadMoreBranches={sale.handleLoadMoreBranches}
+            branchesHasMore={sale.branchesHasMore}
+            isLoadingMoreBranches={sale.isLoadingMoreBranches}
+          />
+        </div>
+
+        <OrderSummary
+          totals={sale.totals}
+          paymentMethods={sale.paymentMethods}
+          selectedPaymentMethodId={sale.selectedPaymentMethodId}
+          setSelectedPaymentMethodId={sale.setSelectedPaymentMethodId}
+          discountPercent={sale.discountPercent}
+          setDiscountPercent={sale.setDiscountPercent}
+          handleSubmit={sale.handleSubmit}
+          isLoading={sale.isSubmitting}
+          cartLength={sale.cart.length}
+        />
+      </div>
+
+      {/* ── AI Prescription Analysis Modal ── */}
+      {rx.analysisResult && (
+        <PrescriptionAnalysisModal
+          isOpen={rx.showAnalysisModal}
+          onClose={rx.closeModal}
+          analysisResult={rx.analysisResult}
+          onConfirm={rx.handlePrescriptionConfirm}
+        />
+      )}
     </div>
   );
 }

@@ -32,11 +32,20 @@ export default function CartItemRow({
 
   return (
     <tr className="group hover:bg-gray-50/50 transition-colors">
+      {/* Remove */}
+      <td className="px-4 py-3 text-center">
+        <button
+          onClick={() => removeFromCart(item.product.oid)}
+          className="text-gray-300 hover:text-red-500 transition-colors"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </td>
       {/* Product Name */}
       <td className="px-4 py-3">
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            <p className="font-bold text-gray-900 text-sm">
+            <p className="font-bold text-gray-900 text-sm text-nowrap">
               {item.product.drugName}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
@@ -44,10 +53,7 @@ export default function CartItemRow({
                 {t("unit")}: {item.unitPrice.toFixed(2)}
               </p>
               {item.serialNumbers.length > 0 && (
-                <Badge
-                  variant="default"
-                  className="px-1 py-0 text-[8px] h-3.5"
-                >
+                <Badge variant="default" className="px-1 py-0 text-[8px] h-3.5">
                   {item.serialNumbers.length} {t("serials")}
                 </Badge>
               )}
@@ -72,7 +78,9 @@ export default function CartItemRow({
           quantity={item.quantity}
           initialSerials={item.serialNumbers}
           productName={item.product.drugName}
-          onSave={(serials) => updateCartItem(item.product.oid, "serialNumbers", serials)}
+          onSave={(serials) =>
+            updateCartItem(item.product.oid, "serialNumbers", serials)
+          }
         />
       </td>
 
@@ -180,16 +188,6 @@ export default function CartItemRow({
       {/* Line Subtotal */}
       <td className="px-4 py-3 text-right font-bold text-gray-900 text-sm">
         {subtotal.toFixed(2)}
-      </td>
-
-      {/* Remove */}
-      <td className="px-4 py-3 text-right">
-        <button
-          onClick={() => removeFromCart(item.product.oid)}
-          className="text-gray-300 hover:text-red-500 transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </td>
     </tr>
   );
