@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const PRESCRIPTION_API_URL =
+const IS_PROD = import.meta.env.PROD;
+const DEV_PRESCRIPTION_URL =
   import.meta.env.VITE_PRESCRIPTION_API_URL || "http://50.6.228.16:8000";
 
 // ─── Response Types ──────────────────────────────────────────────────────────
@@ -48,19 +49,21 @@ export interface PrescriptionAnalysisResponse {
 export const prescriptionService = {
   /**
    * Upload a prescription image for AI analysis.
-   * Sends as multipart/form-data to the external ML API.
+   *
+   * - Dev:  hits the ML backend directly (http://…:8000/analyze)
+   * - Prod: routes through Netlify function to avoid mixed-content block
    */
   analyze: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    return axios.post<PrescriptionAnalysisResponse>(
-      `${PRESCRIPTION_API_URL}/analyze`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000, // 2 min — AI analysis can be slow
-      },
-    );
+    const url = IS_PROD
+      ? "/.netlify/functions/prescription-proxy"
+      : `${DEV_PRESCRIPTION_URL}/analyze`;
+
+    return axios.post<PrescriptionAnalysisResponse>(url, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000, // 2 min — AI analysis can be slow
+    });
   },
 };
