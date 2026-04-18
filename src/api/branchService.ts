@@ -23,4 +23,17 @@ export const branchService = {
     api.put<ApiResponse<BranchDto>>(`/api/Branch/${id}`, dto),
 
   delete: (id: string) => api.delete<ApiResponse>(`/api/Branch/${id}`),
+
+  uploadLogo: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api
+      .post<ApiResponse>(`/api/Branch/${id}/logo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((res) => res.data);
+  },
+
+  deleteLogo: (id: string) =>
+    api.delete<ApiResponse>(`/api/Branch/${id}/logo`).then((res) => res.data),
 };

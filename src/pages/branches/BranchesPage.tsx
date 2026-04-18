@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Edit2, Trash2, MapPin, Search as SearchIcon } from "lucide-react";
+import { Edit2, Trash2, MapPin, Search as SearchIcon, Upload, Image as ImageIcon, X } from "lucide-react";
+import Modal from "@/components/ui/Modal";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/shared/PageHeader";
@@ -7,23 +8,25 @@ import SearchBar from "@/components/shared/SearchBar";
 import Table from "@/components/ui/Table";
 import Pagination from "@/components/ui/Pagination";
 import Badge from "@/components/ui/Badge";
-import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import BranchForm from "./BranchForm";
 import { branchService } from "@/api/branchService";
 import { useQueryTable } from "@/hooks/useQuery";
 import { handleApiError } from "@/utils/handleApiError";
 import { BranchDto, FilterOperation } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 export default function BranchesPage() {
   const { t } = useTranslation("branches");
   const tc = useTranslation("common").t;
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<BranchDto | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://50.6.228.16:4000";
 
   const { data, isLoading, pageNumber, setPageNumber, totalPages, fetch } =
     useQueryTable<BranchDto>({
@@ -49,27 +52,6 @@ export default function BranchesPage() {
     loadData();
   }, [loadData, pageNumber]);
 
-  const handleCreateOrUpdate = async (formData: any) => {
-    setIsActionLoading(true);
-    try {
-      if (selectedBranch) {
-        await branchService.update(selectedBranch.oid, {
-          ...formData,
-          oid: selectedBranch.oid,
-        });
-        toast.success(t("branchUpdated"));
-      } else {
-        await branchService.create(formData);
-        toast.success(t("branchCreated"));
-      }
-      setIsFormOpen(false);
-      loadData();
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedBranch) return;
@@ -86,7 +68,82 @@ export default function BranchesPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, branchId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsActionLoading(true);
+    try {
+      const res = await branchService.uploadLogo(branchId, file);
+      if (res.success) {
+        toast.success(t("logoUploaded", { defaultValue: "Logo uploaded successfully" }));
+        loadData();
+      }
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!selectedBranch) return;
+    setIsActionLoading(true);
+    try {
+      const res = await branchService.deleteLogo(selectedBranch.oid);
+      if (res.success) {
+        toast.success(t("logoDeleted", { defaultValue: "Logo deleted successfully" }));
+        setIsLogoModalOpen(false);
+        loadData();
+      }
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const columns = [
+    {
+      header: t("logo", { defaultValue: "Logo" }),
+      id: "logo",
+      cell: (info: any) => {
+        const branch = info.row.original;
+        return (
+          <div className="flex items-center justify-center">
+            {branch.logoImage ? (
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => {
+                  setSelectedBranch(branch);
+                  setIsLogoModalOpen(true);
+                }}
+              >
+                <img
+                  src={API_BASE_URL + branch.logoImage}
+                  alt="Logo"
+                  className="h-10 w-10 rounded-lg object-cover border border-gray-200 shadow-sm transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ImageIcon className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            ) : (
+              <label className="cursor-pointer p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-gray-400 transition-colors border-2 border-dashed border-gray-200 hover:border-blue-200">
+                <Upload className="h-5 w-5" />
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload(e, branch.oid)}
+                  disabled={isActionLoading}
+                />
+              </label>
+            )}
+          </div>
+        );
+      },
+    },
     {
       header: t("branchCode"),
       accessorKey: "branchCode",
@@ -158,8 +215,7 @@ export default function BranchesPage() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSelectedBranch(info.row.original);
-              setIsFormOpen(true);
+              navigate(`/branches/edit/${info.row.original.oid}`);
             }}
             className="text-blue-600 hover:bg-blue-50"
           >
@@ -186,8 +242,7 @@ export default function BranchesPage() {
       <PageHeader
         title={t("title")}
         onAddClick={() => {
-          setSelectedBranch(null);
-          setIsFormOpen(true);
+          navigate("/branches/new");
         }}
         addLabel={t("addBranch")}
       />
@@ -212,18 +267,6 @@ export default function BranchesPage() {
         />
       </div>
 
-      <Modal
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title={selectedBranch ? t("editBranch") : t("addBranch")}
-        size="lg"
-      >
-        <BranchForm
-          initialData={selectedBranch}
-          onSubmit={handleCreateOrUpdate}
-          isLoading={isActionLoading}
-        />
-      </Modal>
 
       <ConfirmDialog
         isOpen={isDeleteOpen}
@@ -233,6 +276,51 @@ export default function BranchesPage() {
         message={t("deleteConfirm")}
         isLoading={isActionLoading}
       />
+
+      <Modal
+        isOpen={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+        title={t("viewLogo", { defaultValue: "Branch Logo" })}
+        size="md"
+      >
+        <div className="space-y-6">
+          <div className="aspect-square w-full relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-inner flex items-center justify-center">
+            {selectedBranch?.logoImage ? (
+              <img
+                src={API_BASE_URL + selectedBranch.logoImage}
+                alt="Logo Preview"
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <div className="text-gray-400 flex flex-col items-center gap-2">
+                <ImageIcon size={48} />
+                <p>No Logo Found</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center gap-4 pt-4 border-t border-gray-100">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleLogoDelete}
+              isLoading={isActionLoading}
+              className="px-6"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {tc("delete")}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsLogoModalOpen(false)}
+              className="px-6"
+            >
+              {tc("close")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

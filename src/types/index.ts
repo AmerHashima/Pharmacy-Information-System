@@ -206,6 +206,7 @@ export interface BranchDto {
   city: string | null;
   district: string | null;
   address: string | null;
+  logoImage: string | null;
   crn: string | null;
   vatNumber: string | null;
   identifyLookupId: string | null;

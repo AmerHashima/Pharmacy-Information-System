@@ -36,6 +36,7 @@ import StockTransactionReturnDetailPage from "./pages/stock/StockTransactionRetu
 import PermissionGate from "@/components/shared/PermissionGate";
 import { PERMISSIONS } from "@/config/permissions";
 import InvoiceTemplatePage from "./pages/invoiceBuilder/InvoiceTemplatePage";
+import BranchFormPage from "./pages/branches/BranchFormPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -63,6 +64,8 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="branches" element={<BranchesPage />} />
+            <Route path="branches/new" element={<BranchFormPage />} />
+            <Route path="branches/edit/:id" element={<BranchFormPage />} />
             <Route path="stores" element={<StoresPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/new" element={<ProductFormPage />} />
