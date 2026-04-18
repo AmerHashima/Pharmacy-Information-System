@@ -49,23 +49,23 @@ export default function CartItemTable({
           <div className="min-w-[900px] lg:min-w-0">
             <table className="w-full">
               <thead className="sticky top-0 bg-white border-b border-gray-50">
-                <tr className="text-left text-[10px] text-gray-400 uppercase tracking-widest">
-                  <th className="px-4 py-3 font-bold">{t("product")}</th>
+                <tr className="text-center text-[10px] text-gray-400 uppercase tracking-widest">
+                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3 font-bold text-center">{t("product")}</th>
                   <th className="px-4 py-3 font-bold text-center">
                     {t("qty")}
                   </th>
-                  <th className="px-4 py-3 font-bold text-right">
+                  <th className="px-4 py-3 font-bold text-center">
                     {t("price")}
                   </th>
-                  <th className="px-3 py-3 font-bold">
+                  <th className="px-3 py-3 font-bold text-center">
                     {t("discountPercent")}
                   </th>
-                  <th className="px-3 py-3 font-bold">{t("batchNumber")}</th>
-                  <th className="px-3 py-3 font-bold">{t("expiryDate")}</th>
-                  <th className="px-4 py-3 font-bold text-right">
+                  <th className="px-3 py-3 font-bold text-center">{t("batchNumber")}</th>
+                  <th className="px-3 py-3 font-bold text-center">{t("expiryDate")}</th>
+                  <th className="px-4 py-3 font-bold text-center">
                     {t("subtotal")}
                   </th>
-                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
