@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 
 import Button from "@/components/ui/Button";
 import PageHeader from "@/components/shared/PageHeader";
@@ -15,6 +15,7 @@ export default function StockPage() {
   const [activeTab, setActiveTab] = useState<
     "levels" | "transactions" | "new_transaction" | "transaction_returns"
   >("new_transaction");
+  const [isOpeningStock, setIsOpeningStock] = useState(false);
 
   return (
     <div className="space-y-6 max-w-full mx-auto pb-10">
@@ -30,12 +31,29 @@ export default function StockPage() {
         </div> */}
       </PageHeader>
 
-      <StockTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="flex items-center justify-between flex-wrap">
+        <StockTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        {activeTab === "new_transaction" && isOpeningStock && (
+          <a href="/downloads/stock-template.xlsx" download>
+            <Button className="animate-pulse" variant="success">
+              <Download className="h-4 w-4 mx-1" />
+              {t("download_template", { defaultValue: "Download Template" })}
+            </Button>
+          </a>
+        )}
+      </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
         {activeTab === "levels" && <StockLevels />}
         {activeTab === "transactions" && <StockTransactions />}
-        {activeTab === "new_transaction" && <NewTransactionForm />}
+        {activeTab === "new_transaction" && (
+          <NewTransactionForm
+            onTransactionTypeChange={(isOpening: boolean) =>
+              setIsOpeningStock(isOpening)
+            }
+          />
+        )}
         {activeTab === "transaction_returns" && <StockTransactionReturns />}
       </div>
     </div>

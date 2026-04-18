@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import Card from "@/components/ui/Card";
 import Select from "@/components/ui/Select";
 import Input from "@/components/ui/Input";
+import { Download } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface TransactionGeneralInfoProps {
   typeCode?: string;
@@ -53,6 +55,7 @@ export default function TransactionGeneralInfo({
           disabled={isViewMode}
           {...register("transactionTypeId")}
         />
+
 
         <Input
           type="date"

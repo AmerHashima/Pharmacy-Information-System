@@ -18,10 +18,18 @@ import {
 
 import TransactionGeneralInfo from "./TransactionGeneralInfo";
 import TransactionItemsTable from "./TransactionItemsTable";
+import { useEffect } from "react";
+
+interface NewTransactionFormProps {
+  onTransactionTypeChange?: (isOpening: boolean) => void;
+}
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function NewTransactionForm() {
+export default function NewTransactionForm({
+  onTransactionTypeChange,
+}: NewTransactionFormProps) {
+
   const { t, i18n } = useTranslation("stock");
   const { getLookupDetails } = useLookup();
   const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
@@ -66,6 +74,12 @@ export default function NewTransactionForm() {
   const selectedTypeId = watch("transactionTypeId");
   const selectedType = transactionTypes.find((t) => t.oid === selectedTypeId);
   const typeCode = selectedType?.oid;
+
+  useEffect(() => {
+    if (onTransactionTypeChange) {
+      onTransactionTypeChange(selectedTypeId === "aeaf572c-3e60-49df-bdb9-9a9dc29e1d34");
+    }
+  }, [selectedTypeId, onTransactionTypeChange]);
 
   // ─── Products — paginated + cached via TanStack Query ────────────────────
 
