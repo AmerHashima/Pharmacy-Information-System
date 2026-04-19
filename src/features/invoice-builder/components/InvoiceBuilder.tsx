@@ -10,6 +10,7 @@ import { createBlock } from '../utils/blockDefaults'
 import { saveTemplate } from '../utils/serializer'
 import type { InvoiceTemplate } from '../types/template.types'
 import { Save, Eye, EyeOff } from 'lucide-react'
+import { invoiceShapeService } from '@/api/invoiceShapeService'
 
 interface InvoiceBuilderProps {
   templateId?: string
@@ -35,12 +36,28 @@ export function InvoiceBuilder({ templateId, apiUrl, onSaved }: InvoiceBuilderPr
 
   useEffect(() => {
     if (templateId) {
-      fetch(`${apiUrl}/${templateId}`)
-        .then(res => res.json())
-        .then(data => loadTemplate(data))
+      invoiceShapeService.getById(templateId)
+        .then(res => {
+          if (res.data.success) {
+            // Mapping back from DTO to builder format
+            const dto = res.data.data;
+            loadTemplate({
+              id: dto.oid,
+              name: dto.shapeName,
+              version: 1, // Assumption
+              meta: {
+                paperSize: 'A4',
+                margins: { top: 40, right: 40, bottom: 40, left: 40 },
+                primaryColor: '#1a1a2e',
+                currency: 'USD',
+              },
+              blocks: [], // We don't have blocks in the API yet, so we load empty or we'd need to parse html
+            });
+          }
+        })
         .catch(err => console.error("Failed to load template", err))
     }
-  }, [templateId, apiUrl, loadTemplate])
+  }, [templateId, loadTemplate])
 
   const handleSave = async () => {
     setSaving(true)

@@ -24,5 +24,6 @@
   "rsdOperations": "عمليات رصد",
   "pharmacyIS": "Pharmacy IS",
   "management": "الإدارة",
-  "operations": "العمليات"
+  "operations": "العمليات",
+  "invoiceTemplates": "نماذج الفواتير"
 }

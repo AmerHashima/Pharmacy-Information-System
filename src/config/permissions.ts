@@ -69,6 +69,10 @@ export const PERMISSIONS = {
     OPERATE: "rsd.operate",
     LOGS: "rsd.logs",
   },
+  INVOICES: {
+    VIEW: "invoices.view",
+    MANAGE: "invoices.manage",
+  },
 } as const;
 
 // ─── Type Helpers ────────────────────────────────────────────────────────────

@@ -24,5 +24,6 @@
   "rsdOperations": "RSD Operations",
   "pharmacyIS": "Pharmacy IS",
   "management": "Management",
-  "operations": "Operations"
+  "operations": "Operations",
+  "invoiceTemplates": "Invoice Templates"
 }

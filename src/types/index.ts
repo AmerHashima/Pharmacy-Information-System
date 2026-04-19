@@ -993,3 +993,31 @@ export interface CreateStockTransactionReturnDto {
   status: string;
   details: CreateStockTransactionReturnDetailDto[];
 }
+
+// ─── Invoice Shape ──────────────────────────────────────────────────────────
+
+export interface InvoiceShapeDto {
+  oid: string;
+  shapeName: string;
+  htmlContent: string;
+  defaultPrint: boolean;
+  isActive: boolean;
+  branchID: string;
+  branchName?: string;
+  status: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateInvoiceShapeDto {
+  shapeName: string;
+  htmlContent: string;
+  defaultPrint: boolean;
+  isActive: boolean;
+  branchID: string;
+  status: number;
+}
+
+export interface UpdateInvoiceShapeDto extends CreateInvoiceShapeDto {
+  oid: string;
+}

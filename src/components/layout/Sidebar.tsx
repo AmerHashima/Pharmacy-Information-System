@@ -17,6 +17,7 @@ import {
   Plug,
   Briefcase,
   Activity,
+  FileText,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -35,6 +36,7 @@ const menuIcons: Record<string, any> = {
   "/integrations": Plug,
   "/management": Briefcase,
   "/operations": Activity,
+  "/invoice-builder": FileText,
 };
 
 // paths → translation keys (sidebar namespace)
@@ -88,6 +90,11 @@ const menuKeys: MenuItem[] = [
         labelKey: "stakeholders",
         path: "/stakeholders",
         permission: PERMISSIONS.STAKEHOLDERS.VIEW,
+      },
+      {
+        labelKey: "invoiceTemplates",
+        path: "/invoice-builder",
+        permission: PERMISSIONS.INVOICES.VIEW,
       },
       {
         labelKey: "lookups",

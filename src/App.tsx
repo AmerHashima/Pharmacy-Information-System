@@ -36,6 +36,7 @@ import StockTransactionReturnDetailPage from "./pages/stock/StockTransactionRetu
 import PermissionGate from "@/components/shared/PermissionGate";
 import { PERMISSIONS } from "@/config/permissions";
 import InvoiceTemplatePage from "./pages/invoiceBuilder/InvoiceTemplatePage";
+import InvoiceShapesPage from "./pages/invoiceBuilder/InvoiceShapesPage";
 import BranchFormPage from "./pages/branches/BranchFormPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -116,7 +117,9 @@ export default function App() {
               path="integrations/settings"
               element={<BranchIntegrationsPage />}
             />
-            <Route path="invoice-builder" element={<InvoiceTemplatePage />} />
+            <Route path="invoice-builder" element={<InvoiceShapesPage />} />
+            <Route path="invoice-builder/new" element={<InvoiceTemplatePage />} />
+            <Route path="invoice-builder/edit/:id" element={<InvoiceTemplatePage />} />
           </Route>
         </Routes>
       </BrowserRouter>

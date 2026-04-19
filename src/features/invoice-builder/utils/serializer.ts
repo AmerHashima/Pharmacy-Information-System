@@ -12,13 +12,13 @@ export function deserializeTemplate(json: string): InvoiceTemplate {
   return JSON.parse(json) as InvoiceTemplate
 }
 
+import { invoiceShapeService } from '@/api/invoiceShapeService'
+import type { CreateInvoiceShapeDto, UpdateInvoiceShapeDto } from '@/types'
+
 export async function saveTemplate(
   template: InvoiceTemplate,
-  apiUrl: string
+  _apiUrl: string // Keeping for backward compatibility if needed, but using service
 ): Promise<InvoiceTemplate> {
-  const method = template.id ? 'PUT' : 'POST'
-  const url = template.id ? `${apiUrl}/${template.id}` : apiUrl
-
   const htmlContent = renderToStaticMarkup(
     React.createElement(InvoiceRenderer, { template })
   )
@@ -35,17 +35,19 @@ export async function saveTemplate(
     status: 0
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) throw new Error(`Failed to save template: ${res.statusText}`)
-  
-  try {
-    return await res.json()
-  } catch (e) {
-    return template
+  if (template.id) {
+    const res = await invoiceShapeService.update(template.id, {
+      ...payload,
+      oid: template.id,
+    } as UpdateInvoiceShapeDto);
+    return { ...template, ...res.data.data };
+  } else {
+    const res = await invoiceShapeService.create(payload as CreateInvoiceShapeDto);
+    const savedDto = res.data.data;
+    return {
+      ...template,
+      id: savedDto.oid,
+      name: savedDto.shapeName,
+    };
   }
 }
