@@ -6,8 +6,9 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { useTranslation } from "react-i18next";
-import { SystemUserDto, RoleDto } from "@/types";
+import { SystemUserDto, RoleDto, BranchDto } from "@/types";
 import { roleService } from "@/api/roleService";
+import { branchService } from "@/api/branchService";
 import { useLookup } from "@/context/LookupContext";
 
 interface UserFormProps {
@@ -43,11 +44,13 @@ export default function UserForm({
     birthDate: z.string().optional().or(z.literal("")),
     isActive: z.boolean().default(true),
     twoFactorEnabled: z.boolean().default(false),
+    defaultBranchId: z.string().optional().or(z.literal("")),
   });
 
   type UserFormValues = z.infer<typeof userSchema>;
 
   const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [branches, setBranches] = useState<BranchDto[]>([]);
   const { getLookupDetails } = useLookup();
   const genders = getLookupDetails("GENDER") || [];
 
@@ -71,6 +74,13 @@ export default function UserForm({
         setRoles(r.data.data || []);
       })
       .catch(console.error);
+
+    branchService
+      .getAll()
+      .then((res) => {
+        setBranches(res.data.data || []);
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -88,6 +98,7 @@ export default function UserForm({
         isActive: initialData.isActive ?? initialData.status === 1,
         twoFactorEnabled: false,
         password: "", // Don't populate password
+        defaultBranchId: initialData.defaultBranchId || "",
       });
     }
   }, [initialData, reset]);
@@ -174,6 +185,19 @@ export default function UserForm({
           label={t("birthDate", "Birth Date")}
           type="date"
           error={errors.birthDate?.message}
+          disabled={isLoading}
+        />
+        <Select
+          {...register("defaultBranchId")}
+          label={t("defaultBranchId", "Default Branch")}
+          options={[
+            { value: "", label: t("selectBranch", "Select Branch") },
+            ...branches.map((b) => ({
+              value: b.oid,
+              label: b.branchName,
+            })),
+          ]}
+          error={errors.defaultBranchId?.message}
           disabled={isLoading}
         />
       </div>

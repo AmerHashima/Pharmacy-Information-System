@@ -36,7 +36,7 @@ export default function CartItemRow({
       <td className="px-4 py-3 text-center">
         <button
           onClick={() => removeFromCart(item.product.oid)}
-          className="text-gray-300 hover:text-red-500 transition-colors"
+          className="text-red-500 transition-colors"
         >
           <Trash2 className="h-4 w-4" />
         </button>

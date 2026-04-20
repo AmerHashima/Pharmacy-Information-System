@@ -1,10 +1,8 @@
 import { useSaleForm, usePrescriptionAnalysis } from "./hooks";
 
 import SaleGeneralInfo from "./form-components/SaleGeneralInfo";
-import ProductSearch from "./form-components/ProductSearch";
 import CartItemTable from "./form-components/CartItemTable";
 import OrderSummary from "./form-components/OrderSummary";
-import AiPrescriptionButton from "./form-components/AiPrescriptionButton";
 import AnalyzingBanner from "./form-components/AnalyzingBanner";
 import { PrescriptionAnalysisModal } from "./form-components/prescription";
 
@@ -17,44 +15,35 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <div className="space-y-5">
-      {/* ── Row 1: Product Search + AI Button (full width) ── */}
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <ProductSearch
-            products={sale.products}
-            onSearchChange={sale.handleProductSearch}
-            onLoadMore={sale.handleLoadMoreProducts}
-            hasMore={sale.productsHasMore}
-            isLoadingMore={sale.isLoadingMoreProducts}
-            addToCart={sale.addToCart}
-            onBarcodeScan={sale.handleBarcodeScan}
-            barcodeInputRef={sale.barcodeInputRef}
-          />
-        </div>
-
-        <AiPrescriptionButton
-          isAnalyzing={rx.isAnalyzing}
-          prescriptionInputRef={rx.prescriptionInputRef}
-          onUpload={rx.handlePrescriptionUpload}
-          onClickTrigger={rx.openFilePicker}
-        />
-      </div>
 
       {/* ── Analyzing Overlay Banner ── */}
       {rx.isAnalyzing && <AnalyzingBanner />}
 
-      {/* ── Row 2: Cart Items (full width) ── */}
-      <CartItemTable
-        cart={sale.cart}
-        setCart={sale.setCart}
-        updateQuantity={sale.updateQuantity}
-        updateCartItem={sale.updateCartItem}
-        removeFromCart={sale.removeFromCart}
-      />
-
-      {/* ── Row 3: General Info + Order Summary (side by side) ── */}
+      {/* ── Section 1: Top Area (Cart + Summary) ── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 min-w-0">
+        {/* Left Column: Cart items table + General Information */}
+        <div className="xl:col-span-2 flex flex-col gap-5 min-w-0">
+          <CartItemTable
+            cart={sale.cart}
+            setCart={sale.setCart}
+            updateQuantity={sale.updateQuantity}
+            updateCartItem={sale.updateCartItem}
+            removeFromCart={sale.removeFromCart}
+            // Search & AI Rx Props
+            products={sale.products}
+            onProductSearchChange={sale.handleProductSearch}
+            onLoadMoreProducts={sale.handleLoadMoreProducts}
+            productsHasMore={sale.productsHasMore}
+            isLoadingMoreProducts={sale.isLoadingMoreProducts}
+            addToCart={sale.addToCart}
+            onBarcodeScan={sale.handleBarcodeScan}
+            barcodeInputRef={sale.barcodeInputRef}
+            isAnalyzingRx={rx.isAnalyzing}
+            prescriptionInputRef={rx.prescriptionInputRef}
+            onPrescriptionUpload={rx.handlePrescriptionUpload}
+            onAiRxClick={rx.openFilePicker}
+          />
+
           <SaleGeneralInfo
             selectedBranchId={sale.selectedBranchId}
             setSelectedBranchId={sale.setSelectedBranchId}
@@ -78,6 +67,7 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
 
+        {/* Right Column: Order Summary */}
         <OrderSummary
           totals={sale.totals}
           paymentMethods={sale.paymentMethods}
@@ -90,6 +80,8 @@ export default function SaleForm({ onSuccess }: { onSuccess: () => void }) {
           cartLength={sale.cart.length}
         />
       </div>
+
+      {/* ── AI Prescription Analysis Modal ── */}
 
       {/* ── AI Prescription Analysis Modal ── */}
       {rx.analysisResult && (

@@ -67,6 +67,7 @@ export default function UsersPage() {
     if (!payload.middleName) payload.middleName = null;
     if (!payload.mobile) payload.mobile = null;
     if (!payload.email) payload.email = null;
+    if (!payload.defaultBranchId) payload.defaultBranchId = null;
     if (isUpdate && !payload.password) {
       delete payload.password;
     }
@@ -78,7 +79,10 @@ export default function UsersPage() {
     try {
       if (selectedUser) {
         const payload = sanitizePayload(formData, true);
-        await systemUserService.update(selectedUser.oid, payload);
+        await systemUserService.update(selectedUser.oid, {
+          ...payload,
+          oid: selectedUser.oid,
+        });
         toast.success(t("userUpdated"));
       } else {
         const payload = sanitizePayload(formData, false);
@@ -139,7 +143,7 @@ export default function UsersPage() {
     },
     {
       header: t("branch"),
-      accessorKey: "branchName",
+      accessorKey: "defaultBranchName",
       cell: (info: any) => (
         <div className="flex items-center gap-1.5 text-gray-500 text-sm">
           <MapPin className="h-3.5 w-3.5" />
@@ -147,6 +151,16 @@ export default function UsersPage() {
         </div>
       ),
     },
+    // {
+    //   header: t("defaultBranch", "Default Branch"),
+    //   accessorKey: "defaultBranchName",
+    //   cell: (info: any) => (
+    //     <div className="flex items-center gap-1.5 text-blue-600 text-sm font-medium">
+    //       <MapPin className="h-3.5 w-3.5" />
+    //       {info.getValue() || "---"}
+    //     </div>
+    //   ),
+    // },
     {
       header: t("email"),
       accessorKey: "email",

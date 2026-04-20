@@ -52,11 +52,14 @@ export default function SaleGeneralInfo({
   const { t } = useTranslation("sales");
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-      <h3 className="font-bold text-gray-700 text-sm">{t("generalInfo")}</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5 min-h-[220px]">
+      <h3 className="font-bold text-gray-700 text-sm flex items-center gap-2">
+        <span className="w-1.5 h-4 bg-blue-500 rounded-full" />
+        {t("generalInfo")}
+      </h3>
 
-      {/* Row 1: Branch + Customer Name */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Inputs Grid: 4 columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Select
           label={t("source_branch")}
           value={selectedBranchId}
@@ -66,7 +69,6 @@ export default function SaleGeneralInfo({
             value: b.oid,
             label: b.branchName ?? "",
           }))}
-          // ── Pagination ──────────────────────────────────────────────────
           onLoadMore={onLoadMoreBranches}
           hasMore={branchesHasMore}
           isLoadingMore={isLoadingMoreBranches}
@@ -83,10 +85,6 @@ export default function SaleGeneralInfo({
           onChange={(e) => setCustomerPhone(e.target.value)}
           placeholder={t("customerPhone")}
         />
-      </div>
-
-      {/* Row 2: Email + Prescription + Doctor */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Input
           label={t("customerEmail")}
           type="email"
@@ -106,20 +104,18 @@ export default function SaleGeneralInfo({
           onChange={(e) => setDoctorName(e.target.value)}
           placeholder={t("doctorName")}
         />
-      </div>
-
-      {/* Row 3: Notes */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("notes")}
-        </label>
-        <textarea
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 resize-none"
-          rows={2}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder={t("notes")}
-        />
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("notes")}
+          </label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 resize-none h-[42px]"
+            rows={1}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t("notes")}
+          />
+        </div>
       </div>
     </div>
   );

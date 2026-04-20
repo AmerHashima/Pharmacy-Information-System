@@ -141,6 +141,8 @@ export interface SystemUserDto {
   roleName?: string;
   branchId?: string;
   branchName?: string;
+  defaultBranchId?: string;
+  defaultBranchName?: string;
   genderLookupId?: string | null;
   genderName?: string | null;
   status: number;
@@ -163,6 +165,7 @@ export interface CreateSystemUserDto {
   mobile?: string;
   roleId: number;
   branchId: string;
+  defaultBranch?: string;
   status: number;
 }
 

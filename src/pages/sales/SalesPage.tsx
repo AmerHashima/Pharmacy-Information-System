@@ -20,11 +20,11 @@ export default function SalesPage() {
         // addLabel={t("new_sale")}
       />
 
-      <SalesTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* <SalesTabs activeTab={activeTab} setActiveTab={setActiveTab} /> */}
 
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 w-full">
         {activeTab === "form" && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white p-0 rounded-2xl shadow-sm ">
             <SaleForm onSuccess={() => {}} />
           </div>
         )}
