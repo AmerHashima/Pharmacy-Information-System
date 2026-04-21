@@ -8,9 +8,12 @@ import { handleApiError } from "@/utils/handleApiError";
 import { usePaginatedBranches, usePaginatedProducts } from "@/hooks/queries";
 import { AppLookupDetailDto, CreateSalesInvoiceDto, ProductDto } from "@/types";
 import { useCart, type CartItem } from "./useCart";
+import { useAuth } from "@/hooks/useAuth";
+import { systemUserService } from "@/api/systemUserService";
 
 export function useSaleForm(onSuccess: () => void) {
   const { t } = useTranslation("sales");
+  const { user } = useAuth();
 
   // ── Products — paginated ──────────────────────────────────────────
   const {
@@ -32,6 +35,27 @@ export function useSaleForm(onSuccess: () => void) {
 
   // ── General info ──────────────────────────────────────────────────
   const [selectedBranchId, setSelectedBranchId] = useState("");
+
+  // Fetch current user's details to determine default branch
+  useEffect(() => {
+    if (user?.oid) {
+      systemUserService
+        .getById(user.oid)
+        .then((res) => {
+          if (res.data.success && res.data.data) {
+            const fetchedUser = res.data.data;
+            if (fetchedUser.defaultBranchId) {
+              setSelectedBranchId(fetchedUser.defaultBranchId);
+            } else if (fetchedUser.branchId) {
+              setSelectedBranchId(fetchedUser.branchId);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user details for default branch:", err);
+        });
+    }
+  }, [user?.oid]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");

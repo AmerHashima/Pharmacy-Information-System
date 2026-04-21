@@ -145,7 +145,7 @@ export interface SystemUserDto {
   defaultBranchName?: string;
   genderLookupId?: string | null;
   genderName?: string | null;
-  status: number;
+  status?: number;
   isActive?: boolean;
   birthDate?: string | null;
   twoFactorEnabled?: boolean;
