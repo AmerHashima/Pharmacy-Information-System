@@ -13,6 +13,7 @@ export function deserializeTemplate(json: string): InvoiceTemplate {
 }
 
 import { invoiceShapeService } from "@/api/invoiceShapeService";
+import { systemUserService } from "@/api/systemUserService";
 import type { CreateInvoiceShapeDto, UpdateInvoiceShapeDto } from "@/types";
 
 export async function saveTemplate(
@@ -24,7 +25,23 @@ export async function saveTemplate(
   );
 
   const user = useAuthStore.getState().user;
-  const branchID = user?.branchId || "5b4badcc-7088-49bb-a034-c3c6a9409b8b";
+  let branchID = user?.defaultBranchId || user?.branchId || "5b4badcc-7088-49bb-a034-c3c6a9409b8b";
+
+  if (user?.oid) {
+    try {
+      const res = await systemUserService.getById(user.oid);
+      if (res.data.success && res.data.data) {
+        const fetchedUser = res.data.data;
+        if (fetchedUser.defaultBranchId) {
+          branchID = fetchedUser.defaultBranchId;
+        } else if (fetchedUser.branchId) {
+          branchID = fetchedUser.branchId;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch user details for default branch:", err);
+    }
+  }
 
   const payload = {
     shapeName: template.name || "Untitled Template",
