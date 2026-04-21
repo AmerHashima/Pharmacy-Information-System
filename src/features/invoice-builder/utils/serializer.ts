@@ -25,7 +25,7 @@ export async function saveTemplate(
   );
 
   const user = useAuthStore.getState().user;
-  let branchID = user?.defaultBranchId || user?.branchId || "5b4badcc-7088-49bb-a034-c3c6a9409b8b";
+  let branchID = user?.defaultBranchId || user?.branchId;
 
   if (user?.oid) {
     try {
