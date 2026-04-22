@@ -11,6 +11,7 @@ import {
   PagedResult,
   RsdOperationLogDto,
   RsdOperationLogDetailDto,
+  RsdDrugListSyncRequest,
 } from "@/types";
 
 export const rsdService = {
@@ -39,5 +40,10 @@ export const rsdService = {
   getOperationLog: (id: string) =>
     api.get<ApiResponse<RsdOperationLogDetailDto>>(
       `/api/RsdIntegration/operation-logs/${id}`,
+    ),
+  syncDrugList: (data: RsdDrugListSyncRequest) =>
+    api.post<ApiResponse<string>>(
+      "/api/RsdIntegration/drug-list/sync",
+      data,
     ),
 };

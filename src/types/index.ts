@@ -757,6 +757,11 @@ export interface UpdateBranchIntegrationSettingDto {
 
 // ─── RSD Integration ────────────────────────────────────────────────────────
 
+export interface RsdDrugListSyncRequest {
+  branchId: string;
+  drugStatus: number;
+}
+
 export interface RsdDispatchDetailRequest {
   dispatchNotificationId: string;
   branchId: string;

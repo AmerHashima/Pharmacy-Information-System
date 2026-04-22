@@ -8,6 +8,7 @@ import {
   MoreVertical,
   AlertTriangle,
   Beaker,
+  RefreshCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,8 @@ import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { productService } from "@/api/productService";
+import { rsdService } from "@/api/rsdService";
+import { useAuthStore } from "@/store/authStore";
 import { usePaginatedProducts } from "@/hooks/queries/useProducts";
 import { queryKeys } from "@/hooks/queries/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +44,8 @@ export default function ProductsPage() {
     null,
   );
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -67,6 +72,26 @@ export default function ProductsPage() {
       handleApiError(err);
     } finally {
       setIsActionLoading(false);
+    }
+  };
+
+  const handleSyncDrugList = async () => {
+    const branchId = user?.branchId || user?.defaultBranchId;
+    if (!branchId) {
+      toast.error(tc("noBranchSelected", { defaultValue: "No branch selected" }));
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      await rsdService.syncDrugList({
+        branchId,
+        drugStatus: 0,
+      });
+      toast.success(t("syncSuccess", { defaultValue: "Drug list synced successfully!" }));
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -207,7 +232,18 @@ export default function ProductsPage() {
           navigate("/products/new");
         }}
         addLabel={t("addProduct")}
-      />
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleSyncDrugList}
+          isLoading={isSyncing}
+          className="gap-2"
+        >
+          <RefreshCcw className="h-4 w-4" />
+          {t("syncRsd", { defaultValue: "Sync RSD" })}
+        </Button>
+      </PageHeader>
 
       <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
