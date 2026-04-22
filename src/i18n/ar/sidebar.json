@@ -25,5 +25,6 @@
   "pharmacyIS": "Pharmacy IS",
   "management": "الإدارة",
   "operations": "العمليات",
-  "invoiceTemplates": "نماذج الفواتير"
+  "invoiceTemplates": "نماذج الفواتير",
+  "generics": "الأسماء العلمية"
 }

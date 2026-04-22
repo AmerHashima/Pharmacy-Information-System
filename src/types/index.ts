@@ -1024,3 +1024,23 @@ export interface CreateInvoiceShapeDto {
 export interface UpdateInvoiceShapeDto extends CreateInvoiceShapeDto {
   oid: string;
 }
+
+// ─── Generic Name ─────────────────────────────────────────────────────────────
+
+export interface GenericNameDto {
+  oid: string;
+  nameEN: string;
+  nameAR: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateGenericNameDto {
+  nameEN: string;
+  nameAR: string;
+}
+
+export interface UpdateGenericNameDto extends CreateGenericNameDto {
+  oid: string;
+}
+

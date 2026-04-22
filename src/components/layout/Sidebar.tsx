@@ -101,6 +101,10 @@ const menuKeys: MenuItem[] = [
         path: "/lookups",
         permission: PERMISSIONS.LOOKUPS.VIEW,
       },
+      {
+        labelKey: "generics",
+        path: "/generics",
+      },
     ],
   },
   {

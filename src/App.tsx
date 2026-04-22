@@ -38,6 +38,8 @@ import { PERMISSIONS } from "@/config/permissions";
 import InvoiceTemplatePage from "./pages/invoiceBuilder/InvoiceTemplatePage";
 import InvoiceShapesPage from "./pages/invoiceBuilder/InvoiceShapesPage";
 import BranchFormPage from "./pages/branches/BranchFormPage";
+import GenericsPage from "./pages/generics/GenericsPage";
+import GenericFormPage from "./pages/generics/GenericFormPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -109,6 +111,9 @@ export default function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="lookups" element={<LookupsPage />} />
             <Route path="lookups/:lookupCode" element={<LookupDetailPage />} />
+            <Route path="generics" element={<GenericsPage />} />
+            <Route path="generics/new" element={<GenericFormPage />} />
+            <Route path="generics/edit/:id" element={<GenericFormPage />} />
             <Route
               path="integrations/providers"
               element={<IntegrationProvidersPage />}

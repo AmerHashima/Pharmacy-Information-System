@@ -5,4 +5,6 @@ export {
   usePaginatedProducts,
   usePaginatedBranches,
   usePaginatedSuppliers,
+  usePaginatedGenericNames,
 } from "./usePaginatedSelect";
+export { useGenericNames } from "./useGenericNames";

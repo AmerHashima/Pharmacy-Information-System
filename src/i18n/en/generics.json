@@ -1,0 +1,15 @@
+{
+  "title": "Generics Management",
+  "searchPlaceholder": "Search generics...",
+  "addGeneric": "Add Generic",
+  "editGeneric": "Edit Generic",
+  "createGeneric": "Create Generic",
+  "updateGeneric": "Update Generic",
+  "nameEN": "English Name",
+  "nameAR": "Arabic Name",
+  "genericDeleted": "Generic deleted successfully",
+  "genericUpdated": "Generic updated successfully",
+  "genericCreated": "Generic created successfully",
+  "deleteGeneric": "Delete Generic",
+  "deleteConfirm": "Are you sure you want to delete this generic name? This action cannot be undone."
+}

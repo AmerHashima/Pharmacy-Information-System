@@ -10,6 +10,7 @@ import enLocale from "i18n-iso-countries/langs/en.json";
 import arLocale from "i18n-iso-countries/langs/ar.json";
 import { getProductSchema, ProductFormValues } from "./schema";
 import { useLookup } from "@/context/LookupContext";
+import { usePaginatedGenericNames } from "@/hooks/queries";
 
 // Tab Components
 import BasicInfoTab from "./components/BasicInfoTab";
@@ -19,6 +20,26 @@ import StockLevelsTab from "./components/StockLevelsTab";
 
 countries.registerLocale(enLocale);
 countries.registerLocale(arLocale);
+
+const FormSection = ({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: any;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-4 pt-6 first:pt-0">
+    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+        <Icon className="h-5 w-5" />
+      </div>
+      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+    </div>
+    <div className="pl-4 border-l-2 border-transparent">{children}</div>
+  </div>
+);
 
 interface ProductFormProps {
   initialData?: ProductDto | null;
@@ -40,6 +61,14 @@ export default function ProductForm({
   const packageTypeLookups = getLookupDetails("PACKAGE_TYPE");
   const dosageForms = getLookupDetails("Dosage_Form");
   const productGroups = getLookupDetails("PRODUCT_GROUP");
+
+  const {
+    options: genericNames,
+    setSearch: handleGenericNameSearch,
+    loadMore: handleLoadMoreGenericNames,
+    hasMore: genericNamesHasMore,
+    isLoadingMore: isLoadingMoreGenericNames,
+  } = usePaginatedGenericNames();
 
   const {
     register,
@@ -112,26 +141,6 @@ export default function ProductForm({
     flag: code,
   }));
 
-  const FormSection = ({
-    title,
-    icon: Icon,
-    children,
-  }: {
-    title: string;
-    icon: any;
-    children: React.ReactNode;
-  }) => (
-    <div className="space-y-4 pt-6 first:pt-0">
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-          <Icon className="h-5 w-5" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-      </div>
-      <div className="pl-4 border-l-2 border-transparent">{children}</div>
-    </div>
-  );
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -143,6 +152,11 @@ export default function ProductForm({
           errors={errors}
           isLoading={isLoading}
           productTypes={productTypes}
+          genericNames={genericNames}
+          handleGenericNameSearch={handleGenericNameSearch}
+          handleLoadMoreGenericNames={handleLoadMoreGenericNames}
+          genericNamesHasMore={genericNamesHasMore}
+          isLoadingMoreGenericNames={isLoadingMoreGenericNames}
           control={control}
         />
       </FormSection>

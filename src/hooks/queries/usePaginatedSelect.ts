@@ -3,12 +3,14 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { productService } from "@/api/productService";
 import { branchService } from "@/api/branchService";
 import { stakeholderService } from "@/api/stakeholderService";
+import { genericNameService } from "@/api/genericNameService";
 import {
   FilterOperation,
   FilterRequest,
   ProductDto,
   BranchDto,
   StakeholderDto,
+  GenericNameDto,
 } from "@/types";
 import { queryKeys } from "./queryKeys";
 
@@ -255,6 +257,80 @@ export function usePaginatedSuppliers() {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setOptions([]); // clear immediately on new search for clean UX
+      setSearchState(value);
+    }, 300);
+  };
+
+  const loadMore = () => {
+    if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
+  };
+
+  return {
+    options,
+    search,
+    setSearch,
+    loadMore,
+    hasMore: query.hasNextPage ?? false,
+    isLoadingMore: query.isFetchingNextPage || query.isLoading,
+  };
+}
+
+// ─── Generic Names ────────────────────────────────────────────────────────────
+
+const GENERIC_NAME_PAGE_SIZE = 20;
+
+export function usePaginatedGenericNames() {
+  const [search, setSearchState] = useState("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const query = useInfiniteQuery({
+    queryKey: queryKeys.genericNames.list(search),
+    queryFn: ({ pageParam = 1 }) =>
+      genericNameService
+        .query({
+          request: {
+            filters: search.trim()
+              ? [
+                  new FilterRequest(
+                    "nameEN",
+                    search,
+                    FilterOperation.Contains,
+                  ),
+                ]
+              : [],
+            sort: [{ sortBy: "nameEN", sortDirection: "asc" }],
+            pagination: {
+              pageNumber: pageParam as number,
+              pageSize: GENERIC_NAME_PAGE_SIZE,
+            },
+          },
+        })
+        .then((res) => res.data.data!),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage ? lastPage.pageNumber + 1 : undefined,
+    staleTime: 1000 * 60 * 5, // 5 min
+    placeholderData: (prev) => prev,
+  });
+
+  const [options, setOptions] = useState<GenericNameDto[]>([]);
+
+  useEffect(() => {
+    if (!query.data) return;
+    const fetched = query.data.pages.flatMap((p) => p.data);
+    setOptions((prev) => {
+      const merged = [...fetched];
+      prev.forEach((p) => {
+        if (!merged.find((m) => m.oid === p.oid)) merged.push(p);
+      });
+      return merged;
+    });
+  }, [query.data]);
+
+  const setSearch = (value: string) => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setOptions([]); // clear immediately
       setSearchState(value);
     }, 300);
   };

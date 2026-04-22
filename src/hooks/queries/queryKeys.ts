@@ -42,4 +42,10 @@ export const queryKeys = {
     list: (page: number, search: string) =>
       ["users", "list", page, search] as const,
   },
+
+  genericNames: {
+    all: ["genericNames"] as const,
+    allList: () => ["genericNames", "all"] as const,
+    list: (search: string) => ["genericNames", "list", search] as const,
+  },
 };
