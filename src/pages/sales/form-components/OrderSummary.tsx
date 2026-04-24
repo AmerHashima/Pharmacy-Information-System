@@ -1,7 +1,5 @@
-import { Calculator } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Select from "@/components/ui/Select";
-import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { AppLookupDetailDto } from "@/types";
 
@@ -36,54 +34,47 @@ export default function OrderSummary({
   const { t } = useTranslation("sales");
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-4 space-y-6">
-      <h3 className="font-bold text-gray-700">{t("order_summary")}</h3>
-      <div className="space-y-6">
-        {/* Overall Discount */}
-        <Input
-          label={t("discountPercent")}
-          type="number"
-          step="0.01"
-          min={0}
-          max={100}
-          value={discountPercent}
-          onChange={(e) =>
-            setDiscountPercent(Math.min(100, parseFloat(e.target.value) || 0))
-          }
-        />
-
-        {/* Totals */}
-        <div className="space-y-3">
-          <div className="flex justify-between text-gray-500 text-sm">
-            <span>{t("subtotal")}</span>
-            <span className="font-medium">{totals.subtotal.toFixed(2)}</span>
-          </div>
-          {totals.overallDiscount > 0 && (
-            <div className="flex justify-between text-red-500 text-sm">
-              <span>
-                {t("discount")} ({discountPercent}%)
-              </span>
-              <span className="font-medium">
-                -{totals.overallDiscount.toFixed(2)}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between text-gray-500 text-sm">
-            <span>{t("vat")} (15%)</span>
-            <span className="font-medium">{totals.tax.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between">
-            <span className="font-bold text-gray-900">{t("totalAmount")}</span>
-            <span className="font-bold text-blue-600 text-2xl tracking-tighter">
-              {totals.total.toFixed(2)}
-            </span>
-          </div>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+      {/* Total Amount at top */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-gray-700">
+          {t("order_summary")}
+          <span className="text-xs font-normal text-gray-500 ml-2">Prices include VAT</span>
+        </h3>
+        <div className="text-right">
+          <p className="text-xs text-gray-500 mb-0.5">{t("totalAmount")}</p>
+          <span className="font-bold text-blue-600 text-2xl tracking-tighter">
+            {totals.total.toFixed(2)}
+          </span>
         </div>
-
-        <div className="h-px bg-gray-100"></div>
-
-        {/* Payment Method */}
-        <div className="space-y-4">
+      </div>
+      <div className="space-y-4">
+        {/* Discount, VAT and Payment Method in same row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+          <div className="text-center">
+            <p className="text-xs text-gray-500 mb-1">{t("discount")}</p>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={discountPercent}
+              onChange={(e) =>
+                setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))
+              }
+              className="w-full text-center font-semibold text-red-500 bg-transparent border border-red-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-red-400"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              {discountPercent > 0 ? `${discountPercent.toFixed(2)}%` : "0%"}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-gray-500 mb-1">{t("vat")}</p>
+            <p className="font-semibold text-gray-900">
+              {totals.tax.toFixed(2)}
+            </p>
+            <p className="text-[10px] text-gray-400">(15%)</p>
+          </div>
           <Select
             label={t("paymentMethod")}
             value={selectedPaymentMethodId}
@@ -93,24 +84,17 @@ export default function OrderSummary({
               label: pm.valueNameEn ?? "",
             }))}
           />
-
-          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-3">
-            <Calculator className="h-5 w-5 text-blue-600 flex-shrink-0" />
-            <div className="text-xs text-blue-800">
-              <p className="font-bold mb-1">{t("pos_calculation")}</p>
-              <p>{t("pos_calculation_msg")}</p>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleSubmit}
-            className="w-full h-14 text-lg font-bold shadow-lg shadow-blue-200"
-            disabled={cartLength === 0 || isLoading}
-            isLoading={isLoading}
-          >
-            {t("complete_transaction")}
-          </Button>
         </div>
+
+        {/* Submit Button */}
+        <Button
+          onClick={handleSubmit}
+          className="w-full h-14 text-lg font-bold shadow-lg shadow-blue-200"
+          disabled={cartLength === 0 || isLoading}
+          isLoading={isLoading}
+        >
+          {t("complete_transaction")}
+        </Button>
       </div>
     </div>
   );

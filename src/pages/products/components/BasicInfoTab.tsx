@@ -39,27 +39,31 @@ export default function BasicInfoTab({
 }: BasicInfoTabProps) {
   const { t } = useTranslation("products");
   const tc = useTranslation("common").t;
+  const compactInputClass = "px-2.5 py-1.5";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-3 animate-in fade-in slide-in-from-left-4 duration-300">
       <Input
         {...register("drugName")}
         label={t("drugName") + "*"}
         placeholder="e.g. Panadol Extra"
         error={errors.drugName?.message}
         disabled={isLoading}
+        className={compactInputClass}
       />
       <Input
         {...register("gtin")}
         label={t("gtin")}
         placeholder="Global Trade Item Number"
         disabled={isLoading}
+        className={compactInputClass}
       />
       <Input
         {...register("barcode")}
         label={t("barcode")}
         placeholder="Standard barcode"
         disabled={isLoading}
+        className={compactInputClass}
       />
       <Controller
         name="genericName"
@@ -97,6 +101,7 @@ export default function BasicInfoTab({
         label={t("drugNameAr")}
         placeholder="اسم الدواء بالعربية"
         disabled={isLoading}
+        className={compactInputClass}
       />
       <Controller
         name="productTypeId"
@@ -117,6 +122,7 @@ export default function BasicInfoTab({
         {...positiveNumberInputProps}
         step="0.01"
         disabled={isLoading}
+        className={compactInputClass}
       />
       <Controller
         name="status"

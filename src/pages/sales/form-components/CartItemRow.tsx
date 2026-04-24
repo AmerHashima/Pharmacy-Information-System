@@ -15,6 +15,7 @@ interface CartItemRowProps {
     value?: any,
   ) => void;
   removeFromCart: (productId: string) => void;
+  selectedBranchId: string;
 }
 
 export default function CartItemRow({
@@ -22,6 +23,7 @@ export default function CartItemRow({
   updateQuantity,
   updateCartItem,
   removeFromCart,
+  selectedBranchId,
 }: CartItemRowProps) {
   const { t } = useTranslation("sales");
   const [isSerialModalOpen, setIsSerialModalOpen] = useState(false);
@@ -61,11 +63,10 @@ export default function CartItemRow({
           </div>
           <button
             onClick={() => setIsSerialModalOpen(true)}
-            className={`p-1.5 rounded transition-colors ${
-              item.serialNumbers.length > 0
-                ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                : "text-gray-300 hover:bg-gray-100 hover:text-gray-600"
-            }`}
+            className={`p-1.5 rounded transition-colors ${item.serialNumbers.length > 0
+              ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+              : "text-gray-300 hover:bg-gray-100 hover:text-gray-600"
+              }`}
             title={t("enter_serials")}
           >
             <Barcode className="h-4 w-4" />
@@ -86,27 +87,50 @@ export default function CartItemRow({
 
       {/* Quantity */}
       <td className="px-4 py-3">
-        <div className="flex items-center justify-center gap-1">
-          <button
-            onClick={() => updateQuantity(item.product.oid, -1)}
-            className="p-1 hover:bg-white rounded border border-gray-200"
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <span className="w-8 text-center font-bold text-sm">
-            {item.quantity}
-          </span>
-          <button
-            onClick={() => updateQuantity(item.product.oid, 1)}
-            className="p-1 hover:bg-white rounded border border-gray-200"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => updateQuantity(item.product.oid, -1)}
+              className="p-1 hover:bg-white rounded border border-gray-200"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <input
+              type="number"
+              min="1"
+              max={item.availableQuantity > 0 ? item.availableQuantity : undefined}
+              value={item.quantity}
+              onChange={(e) => {
+                let newQty = parseInt(e.target.value) || 1;
+                newQty = Math.max(1, newQty);
+                if (item.availableQuantity > 0) {
+                  newQty = Math.min(newQty, item.availableQuantity);
+                }
+                updateCartItem(item.product.oid, "quantity", newQty);
+              }}
+              className="w-12 text-center font-bold text-sm border border-gray-200 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            />
+            <button
+              onClick={() => updateQuantity(item.product.oid, 1)}
+              disabled={item.availableQuantity > 0 && item.quantity >= item.availableQuantity}
+              className={`p-1 rounded border border-gray-200 ${item.availableQuantity > 0 && item.quantity >= item.availableQuantity
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-white"
+                }`}
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+          {item.availableQuantity > 0 && (
+            <span className="text-[10px] text-gray-500 text-center">
+              {t("available", "Available")}: {item.availableQuantity}
+            </span>
+          )}
         </div>
       </td>
 
       {/* Unit Price */}
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3 text-center">
         <input
           type="number"
           step="0.01"
@@ -119,12 +143,12 @@ export default function CartItemRow({
               parseFloat(e.target.value) || 0,
             )
           }
-          className="w-20 text-right text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-20 mx-auto block text-center text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </td>
 
       {/* Discount % */}
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 text-center">
         <input
           type="number"
           step="0.01"
@@ -138,28 +162,32 @@ export default function CartItemRow({
               Math.min(100, parseFloat(e.target.value) || 0),
             )
           }
-          className="w-16 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-16 mx-auto block text-center text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </td>
 
       {/* Batch */}
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 text-center">
         {item.product.gtin ? (
-          <SelectBatch
-            gtin={item.product.gtin}
-            onSelect={(batch) => {
-              const updates: Partial<CartItem> = {
-                batchNumber: batch.batchNumber || "",
-              };
-              if (batch.expiryDate) {
-                updates.expiryDate = new Date(batch.expiryDate)
-                  .toISOString()
-                  .split("T")[0];
-              }
-              updateCartItem(item.product.oid, updates);
-            }}
-            placeholder={item.batchNumber || "—"}
-          />
+          <div className="max-w-[220px] mx-auto">
+            <SelectBatch
+              gtin={item.product.gtin}
+              branchId={selectedBranchId}
+              onSelect={(batch) => {
+                const updates: Partial<CartItem> = {
+                  batchNumber: batch.batchNumber || "",
+                  availableQuantity: batch.availableQuantity || 0,
+                };
+                if (batch.expiryDate) {
+                  updates.expiryDate = new Date(batch.expiryDate)
+                    .toISOString()
+                    .split("T")[0];
+                }
+                updateCartItem(item.product.oid, updates);
+              }}
+              placeholder={item.batchNumber || "—"}
+            />
+          </div>
         ) : (
           <input
             type="text"
@@ -167,26 +195,26 @@ export default function CartItemRow({
             onChange={(e) =>
               updateCartItem(item.product.oid, "batchNumber", e.target.value)
             }
-            className="w-24 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-24 mx-auto block text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
             placeholder="—"
           />
         )}
       </td>
 
       {/* Expiry */}
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 text-center">
         <input
           type="date"
           value={item.expiryDate}
           onChange={(e) =>
             updateCartItem(item.product.oid, "expiryDate", e.target.value)
           }
-          className="w-32 text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="w-32 mx-auto block text-sm border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
         />
       </td>
 
       {/* Line Subtotal */}
-      <td className="px-4 py-3 text-right font-bold text-gray-900 text-sm">
+      <td className="px-4 py-3 text-center font-bold text-gray-900 text-sm">
         {subtotal.toFixed(2)}
       </td>
     </tr>

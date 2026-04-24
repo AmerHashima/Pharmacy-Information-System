@@ -30,14 +30,14 @@ const FormSection = ({
   icon: any;
   children: React.ReactNode;
 }) => (
-  <div className="space-y-4 pt-6 first:pt-0">
-    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+  <div className="space-y-2 pt-4 first:pt-0">
+    <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+      <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
         <Icon className="h-5 w-5" />
       </div>
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      <h3 className="text-base font-bold text-gray-900">{title}</h3>
     </div>
-    <div className="pl-4 border-l-2 border-transparent">{children}</div>
+    <div className="pl-2">{children}</div>
   </div>
 );
 
@@ -144,7 +144,7 @@ export default function ProductForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-10 divide-y divide-gray-50"
+      className="space-y-6 divide-y divide-gray-50"
     >
       <FormSection title={t("basicInfo")} icon={Info}>
         <BasicInfoTab
@@ -187,11 +187,11 @@ export default function ProductForm({
         <StockLevelsTab register={register} isLoading={isLoading} />
       </FormSection>
 
-      <div className="flex justify-end pt-8">
+      <div className="flex justify-end pt-4">
         <Button
           type="submit"
           isLoading={isLoading}
-          className="px-12 py-3 shadow-lg shadow-blue-200 min-w-[200px]"
+          className="px-8 py-2.5 shadow-lg shadow-blue-200 min-w-[170px]"
         >
           {initialData ? t("updateProduct") : t("createProduct")}
         </Button>

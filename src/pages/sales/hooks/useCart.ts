@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { ProductDto } from "@/types";
 
+const ZERO_RATED_VAT_TYPE_ID = "22222222-2222-2222-2222-2222222220c1";
+
 export interface CartItem {
   product: ProductDto;
   quantity: number;
@@ -10,6 +12,7 @@ export interface CartItem {
   serialNumbers: string[];
   expiryDate: string;
   notes: string;
+  availableQuantity: number;
 }
 
 export function useCart(discountPercent: number) {
@@ -44,6 +47,7 @@ export function useCart(discountPercent: number) {
             serialNumbers: extra?.serialNumbers || [],
             expiryDate: extra?.expiryDate || "",
             notes: "",
+            availableQuantity: 0,
           },
         ];
       });
@@ -56,7 +60,10 @@ export function useCart(discountPercent: number) {
       prev.map((item) => {
         if (item.product.oid === productId) {
           const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
+          // Don't exceed available quantity
+          const maxQty = item.availableQuantity > 0 ? item.availableQuantity : newQty;
+          const finalQty = Math.min(newQty, maxQty);
+          return { ...item, quantity: finalQty };
         }
         return item;
       }),
@@ -95,9 +102,21 @@ export function useCart(discountPercent: number) {
       const lineDiscount = lineTotal * (item.discountPercent / 100);
       return acc + (lineTotal - lineDiscount);
     }, 0);
+
+    const taxableSubtotal = cart.reduce((acc, item) => {
+      if (item.product.vatTypeId === ZERO_RATED_VAT_TYPE_ID) {
+        return acc;
+      }
+      const lineTotal = item.quantity * item.unitPrice;
+      const lineDiscount = lineTotal * (item.discountPercent / 100);
+      return acc + (lineTotal - lineDiscount);
+    }, 0);
+
     const overallDiscount = subtotal * (discountPercent / 100);
     const afterDiscount = subtotal - overallDiscount;
-    const tax = afterDiscount * 0.15;
+    const taxableAfterOverallDiscount =
+      taxableSubtotal - taxableSubtotal * (discountPercent / 100);
+    const tax = taxableAfterOverallDiscount * 0.15;
     const total = afterDiscount + tax;
     return { subtotal, tax, total, overallDiscount };
   }, [cart, discountPercent]);

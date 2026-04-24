@@ -17,6 +17,7 @@ interface CartItemTableProps {
     value?: any,
   ) => void;
   removeFromCart: (productId: string) => void;
+  selectedBranchId: string;
 
   // New props for search and AI Rx
   products: ProductDto[];
@@ -39,6 +40,7 @@ export default function CartItemTable({
   updateQuantity,
   updateCartItem,
   removeFromCart,
+  selectedBranchId,
   products,
   onProductSearchChange,
   onLoadMoreProducts,
@@ -55,7 +57,7 @@ export default function CartItemTable({
   const { t } = useTranslation("sales");
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[380px] flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 420px)', minHeight: '320px' }}>
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between gap-4">
         <h3 className="flex items-center gap-2 font-bold text-gray-700 whitespace-nowrap">
           <ShoppingCart className="h-4 w-4" />
@@ -135,6 +137,7 @@ export default function CartItemTable({
                     updateQuantity={updateQuantity}
                     updateCartItem={updateCartItem}
                     removeFromCart={removeFromCart}
+                    selectedBranchId={selectedBranchId}
                   />
                 ))}
               </tbody>

@@ -249,6 +249,37 @@ export interface UpdateBranchDto extends CreateBranchDto {
   oid: string;
 }
 
+// ─── Invoice Setup ───────────────────────────────────────────────────────────
+
+export interface InvoiceSetupDto {
+  oid: string;
+  nameAr: string | null;
+  nameEn: string | null;
+  format: string | null;
+  numberValue: number;
+  branchId: string;
+  branchName: string | null;
+  invoiceTypeId: string;
+  invoiceTypeName: string | null;
+  createdAt?: string;
+  updatedAt?: string | null;
+  // Allow compatibility with backend naming variants.
+  [key: string]: any;
+}
+
+export interface CreateInvoiceSetupDto {
+  nameAr: string;
+  nameEn: string;
+  format: string;
+  numberValue: number;
+  branchId: string;
+  invoiceTypeId: string;
+}
+
+export interface UpdateInvoiceSetupDto extends CreateInvoiceSetupDto {
+  oid: string;
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 export interface StoreDto {
   oid: string;

@@ -6,7 +6,12 @@ import { salesService } from "@/api/salesService";
 import { lookupService } from "@/api/lookupService";
 import { handleApiError } from "@/utils/handleApiError";
 import { usePaginatedBranches, usePaginatedProducts } from "@/hooks/queries";
-import { AppLookupDetailDto, CreateSalesInvoiceDto, ProductDto } from "@/types";
+import {
+  AppLookupDetailDto,
+  CreateSalesInvoiceDto,
+  ProductDto,
+  SalesInvoiceDto,
+} from "@/types";
 import { useCart, type CartItem } from "./useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { systemUserService } from "@/api/systemUserService";
@@ -142,11 +147,11 @@ export function useSaleForm(onSuccess: () => void) {
   const handleSubmit = async () => {
     if (cart.length === 0) {
       toast.error(t("cart_empty"));
-      return;
+      return null;
     }
     if (!selectedBranchId) {
       toast.error(t("branch_required"));
-      return;
+      return null;
     }
 
     setIsSubmitting(true);
@@ -211,12 +216,15 @@ export function useSaleForm(onSuccess: () => void) {
         }),
       };
 
-      await salesService.create(dto);
+      const createRes = await salesService.create(dto);
+      const createdInvoice: SalesInvoiceDto | null = createRes.data.data || null;
       toast.success(t("sale_success"));
       clearCart();
       onSuccess();
+      return createdInvoice;
     } catch (err) {
       handleApiError(err);
+      return null;
     } finally {
       setIsSubmitting(false);
     }
