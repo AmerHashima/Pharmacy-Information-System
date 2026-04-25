@@ -55,5 +55,18 @@
   "deleteUnitConfirm": "هل أنت متأكد أنك تريد حذف وحدة المنتج هذه؟",
   "noUnitsFound": "لم يتم تعريف وحدات بعد",
   "addYourFirstUnit": "اضغط على 'إضافة وحدة' لتعريف وحدة تعبئة لهذا المنتج",
-  "conversionFactor": "معامل التحويل"
+  "conversionFactor": "معامل التحويل",
+  "scientificComposition": "التركيبة العلمية",
+  "manageGenericsDescription": "إدارة المكونات الدوائية واستكشاف البدائل العلمية المماثلة",
+  "scientificDetails": "التفاصيل العلمية",
+  "alternativeProducts": "المنتجات البديلة (البدائل)",
+  "noAlternativesFound": "لم يتم العثور على منتجات بديلة بنفس التركيبة العلمية",
+  "scientificName": "الاسم العلمي / المادة الفعالة",
+  "openGenericsManager": "فتح مدير الأسماء العلمية",
+  "exploreGenericDatabase": "عرض المزيد من المعلومات حول هذا الكيان العلمي في قاعدة البيانات",
+  "scientificEntity": "الكيان العلمي",
+  "noGenericAssigned": "لم يتم تعيين اسم علمي",
+  "noGenericDescription": "هذا المنتج غير مرتبط باسم علمي. قم بتعيينه في قسم المعلومات الأساسية.",
+  "inStock": "في المخزون",
+  "findMoreGenerics": "قاعدة بيانات الأسماء العلمية"
 }

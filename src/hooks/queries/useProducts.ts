@@ -210,3 +210,37 @@ export function useDeleteProductUnit(productId: string) {
     },
   });
 }
+/**
+ * Fetch products sharing the same generic name.
+ */
+export function useAlternativeProducts(
+  genericName: string | undefined,
+  excludeProductId: string | undefined,
+) {
+  return useQuery({
+    queryKey: queryKeys.products.list(`alt-${genericName}`),
+    queryFn: () => {
+      if (!genericName) return Promise.resolve([]);
+      return productService
+        .query({
+          request: {
+            filters: [
+              {
+                propertyName: "genericName",
+                value: genericName,
+                operation: FilterOperation.Equals,
+              },
+            ],
+            sort: [],
+            pagination: { pageNumber: 1, pageSize: 10 },
+          },
+        })
+        .then((res) => {
+          const products = res.data.data?.data ?? [];
+          return products.filter((p) => p.oid !== excludeProductId);
+        });
+    },
+    enabled: !!genericName,
+    staleTime: 1000 * 60 * 5, // 5 min
+  });
+}

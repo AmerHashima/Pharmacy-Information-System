@@ -13,7 +13,8 @@ import Spinner from "@/components/ui/Spinner";
 import { useState } from "react";
 import ProductUnitTable from "./components/ProductUnitTable";
 import ProductUnitForm from "./components/ProductUnitForm";
-import { Layers, Plus } from "lucide-react";
+import ProductGenerics from "./components/ProductGenerics";
+import { Layers, Plus, Beaker } from "lucide-react";
 import Button from "@/components/ui/Button";
 
 export default function ProductFormPage() {
@@ -136,6 +137,33 @@ export default function ProductFormPage() {
               units={units}
               isLoading={isUnitsLoading}
               onEdit={setEditingUnit}
+            />
+          </div>
+        </div>
+      )}
+
+      {id && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+          <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                <Beaker className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {t("scientificComposition")}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {t("manageGenericsDescription")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <ProductGenerics
+              productId={id}
+              genericName={initialData?.genericName || null}
             />
           </div>
         </div>
