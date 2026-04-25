@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import FormError from "@/components/ui/FormError";
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -152,6 +153,18 @@ export default function LoginPage() {
             >
               {t("signIn")}
             </Button>
+
+            {/* <div className="text-center mt-6">
+              <span className="text-sm text-gray-500 font-medium">
+                {t("noAccount")}{" "}
+                <Link
+                  to="/register"
+                  className="font-bold text-blue-600 hover:text-blue-700"
+                >
+                  {t("signUp")}
+                </Link>
+              </span>
+            </div> */}
           </form>
         </div>
 

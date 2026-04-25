@@ -14,5 +14,7 @@
   "passwordTooLong": "Password is too long",
   "invalidCredentials": "Invalid username or password",
   "poweredBy": "Powered by",
-  "company": "HealthTech Solutions"
+  "company": "HealthTech Solutions",
+  "noAccount": "Don't have an account?",
+  "signUp": "Sign Up"
 }

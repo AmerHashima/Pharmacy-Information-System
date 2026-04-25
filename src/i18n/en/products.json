@@ -57,5 +57,18 @@
   "deleteUnitConfirm": "Are you sure you want to delete this product unit?",
   "noUnitsFound": "No units defined",
   "addYourFirstUnit": "Click 'Add Unit' to define a packaging unit for this product",
-  "conversionFactor": "Conversion Factor"
+  "conversionFactor": "Conversion Factor",
+  "scientificComposition": "Scientific Composition",
+  "manageGenericsDescription": "Manage drug ingredients and explore similar generic products",
+  "scientificDetails": "Scientific Details",
+  "alternativeProducts": "Alternative Products",
+  "noAlternativesFound": "No alternative products found with the same generic composition",
+  "scientificName": "Scientific Name",
+  "openGenericsManager": "Open Generics Manager",
+  "exploreGenericDatabase": "View more information about this scientific entity in the global database",
+  "scientificEntity": "Scientific Entity",
+  "noGenericAssigned": "No Generic Name Assigned",
+  "noGenericDescription": "This product doesn't have a scientific name linked. Assign one in the Basic Info section.",
+  "inStock": "In Stock",
+  "findMoreGenerics": "Generics Database"
 }
