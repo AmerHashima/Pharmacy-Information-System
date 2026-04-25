@@ -154,7 +154,7 @@ export default function LoginPage() {
               {t("signIn")}
             </Button>
 
-            <div className="text-center mt-6">
+            {/* <div className="text-center mt-6">
               <span className="text-sm text-gray-500 font-medium">
                 {t("noAccount")}{" "}
                 <Link
@@ -164,7 +164,7 @@ export default function LoginPage() {
                   {t("signUp")}
                 </Link>
               </span>
-            </div>
+            </div> */}
           </form>
         </div>
 
