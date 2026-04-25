@@ -106,7 +106,7 @@ export default function StockTransactionDetailPage() {
     defaultValues: {
       transactionDate: new Date().toISOString().split("T")[0],
       details: [],
-    },
+    },  //amer
   });
 
   const { handleSubmit, watch, reset, getValues, setValue } = methods;
