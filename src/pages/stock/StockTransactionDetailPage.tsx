@@ -62,14 +62,14 @@ export default function StockTransactionDetailPage() {
   const [branchesHasMore, setBranchesHasMore] = useState(true);
   const [isLoadingMoreBranches, setIsLoadingMoreBranches] = useState(false);
   const currentBranchSearchRef = useRef<string | undefined>("");
-  const branchSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const branchSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pagination states for suppliers
   const [suppliersPage, setSuppliersPage] = useState(1);
   const [suppliersHasMore, setSuppliersHasMore] = useState(true);
   const [isLoadingMoreSuppliers, setIsLoadingMoreSuppliers] = useState(false);
   const currentSupplierSearchRef = useRef<string | undefined>("");
-  const supplierSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const supplierSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const transactionTypes = getLookupDetails("TRANSACTION_TYPE");
 
@@ -87,6 +87,9 @@ export default function StockTransactionDetailPage() {
           productId: z.string().min(1, t("product_required")),
           qrcode: z.string().optional(),
           quantity: z.number().min(0.01, t("quantity_min")),
+          productPrice: z.number().min(0).optional(),
+          discountPercentOne: z.number().min(0).max(100).optional(),
+          discountPercentTwo: z.number().min(0).max(100).optional(),
           unitCost: z.number().min(0),
           batchNumber: z.string().min(1, t("batch_number_required")),
           expiryDate: z.string().min(1, t("expiry_date_required")),
@@ -114,7 +117,7 @@ export default function StockTransactionDetailPage() {
   );
   const typeCode = selectedType?.oid;
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const fetchProducts = async (
     search: string | undefined,
@@ -316,6 +319,9 @@ export default function StockTransactionDetailPage() {
             const initialDetails = tData.details.map((d) => ({
               productId: d.productId,
               quantity: d.quantity,
+              productPrice: d.productPrice ?? d.unitCost,
+              discountPercentOne: d.discountPercentOne ?? 0,
+              discountPercentTwo: d.discountPercentTwo ?? 0,
               unitCost: d.unitCost,
               batchNumber: d.batchNumber || "",
               expiryDate: d.expiryDate?.split("T")[0] || "",
@@ -342,7 +348,7 @@ export default function StockTransactionDetailPage() {
                   oid: d.productId,
                   drugName: d.productName || "Product",
                   gtin: d.productGTIN || "",
-                  price: d.unitCost,
+                  price: d.productPrice ?? d.unitCost,
                 }) as ProductDto,
             );
             setProducts(detailedProducts);
@@ -501,6 +507,7 @@ export default function StockTransactionDetailPage() {
               onLoadMoreProducts={handleLoadMoreProducts}
               productsHasMore={productsHasMore}
               isLoadingMoreProducts={isLoadingMoreProducts}
+              showPricingDetails={true}
             />
 
             <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">

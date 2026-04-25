@@ -342,6 +342,8 @@ export interface ProductDto {
   countryOfOrigin: string | null;
   minStockLevel: number | null;
   maxStockLevel: number | null;
+  discountPercentSupplierOne: number | null;
+  discountPercentSupplierTwo: number | null;
   vatTypeId: string | null;
   vatTypeName: string | null;
   vatTypeNameAr: string | null;
@@ -412,6 +414,8 @@ export interface CreateProductDto {
   countryOfOrigin?: string;
   minStockLevel?: number;
   maxStockLevel?: number;
+  discountPercentSupplierOne?: number;
+  discountPercentSupplierTwo?: number;
   vatTypeId?: string | null;
   packageTypeId?: string;
   dosageFormId?: string;
@@ -608,6 +612,9 @@ export interface StockTransactionDetailDto {
   productGTIN?: string;
   quantity: number;
   gtin?: string;
+  productPrice?: number;
+  discountPercentOne?: number;
+  discountPercentTwo?: number;
   batchNumber?: string;
   expiryDate?: string;
   serialNumber?: string;

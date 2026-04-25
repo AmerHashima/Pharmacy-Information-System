@@ -1,4 +1,4 @@
-import { Plus, Search, ScanLine } from "lucide-react";
+import { Plus, ScanLine } from "lucide-react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
@@ -15,15 +15,32 @@ interface TransactionItemsTableProps {
   products: ProductDto[];
   setProducts: React.Dispatch<React.SetStateAction<ProductDto[]>>;
   debouncedFetchProducts: (search: string) => void;
-  /** Called when the user scrolls to the bottom of the product dropdown. */
   onLoadMoreProducts: () => void;
-  /** Whether more product pages are available on the server. */
   productsHasMore: boolean;
-  /** True while the next page of products is in-flight. */
   isLoadingMoreProducts: boolean;
   showAddProducts?: boolean;
   isViewMode?: boolean;
+  showPricingDetails?: boolean;
 }
+
+const clampDiscount = (value: number) => Math.min(Math.max(value, 0), 100);
+
+const calculateUnitCost = (
+  productPrice?: number,
+  discountPercentOne?: number,
+  discountPercentTwo?: number,
+) => {
+  const basePrice = Number(productPrice || 0);
+  const firstDiscount = clampDiscount(Number(discountPercentOne || 0));
+  const secondDiscount = clampDiscount(Number(discountPercentTwo || 0));
+
+  const afterFirstDiscount =
+    firstDiscount > 0 ? basePrice * (1 - firstDiscount / 100) : basePrice;
+
+  return secondDiscount > 0
+    ? afterFirstDiscount * (1 - secondDiscount / 100)
+    : afterFirstDiscount;
+};
 
 export default function TransactionItemsTable({
   products,
@@ -34,6 +51,7 @@ export default function TransactionItemsTable({
   isLoadingMoreProducts,
   showAddProducts = true,
   isViewMode = false,
+  showPricingDetails = false,
 }: TransactionItemsTableProps) {
   const { t, i18n } = useTranslation("stock");
   const isRtl = i18n.dir() === "rtl";
@@ -79,9 +97,16 @@ export default function TransactionItemsTable({
           qrcode: barcode,
           productId: prod?.oid || "",
           quantity: 1,
-          unitCost: prod?.price || 0,
+          productPrice: prod?.price || 0,
+          discountPercentOne: prod?.discountPercentSupplierOne || 0,
+          discountPercentTwo: prod?.discountPercentSupplierTwo || 0,
+          unitCost: calculateUnitCost(
+            prod?.price || 0,
+            prod?.discountPercentSupplierOne || 0,
+            prod?.discountPercentSupplierTwo || 0,
+          ),
           batchNumber: barcodeData?.batchNumber || "",
-          expiryDate: expiryDate,
+          expiryDate,
         });
 
         toast.success(t("product_added") || "Product added via scanning");
@@ -112,6 +137,7 @@ export default function TransactionItemsTable({
 
     let nextRow = row;
     let nextCol = col;
+    const maxCol = showPricingDetails ? 7 : 4;
 
     switch (e.key) {
       case "ArrowUp":
@@ -124,11 +150,11 @@ export default function TransactionItemsTable({
         break;
       case "ArrowLeft":
         e.preventDefault();
-        nextCol = isRtl ? Math.min(4, col + 1) : Math.max(0, col - 1);
+        nextCol = isRtl ? Math.min(maxCol, col + 1) : Math.max(0, col - 1);
         break;
       case "ArrowRight":
         e.preventDefault();
-        nextCol = isRtl ? Math.max(0, col - 1) : Math.min(4, col + 1);
+        nextCol = isRtl ? Math.max(0, col - 1) : Math.min(maxCol, col + 1);
         break;
       default:
         return;
@@ -146,13 +172,6 @@ export default function TransactionItemsTable({
     <Card className="overflow-visible min-h-[400px] border-none shadow-lg">
       {showAddProducts && (
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-          {/* <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-            <Plus size={20} />
-          </div>
-          <h2 className="text-xl font-bold text-gray-800">{t("items")}</h2>
-        </div> */}
-
           <div className="flex flex-1 flex-col sm:flex-row items-stretch gap-3 w-full max-w-2xl">
             <div className="flex-1">
               <div className="relative">
@@ -171,7 +190,7 @@ export default function TransactionItemsTable({
                     }
                   }}
                   autoFocus
-                  className={`pl-10  text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
+                  className={`pl-10 text-lg border-green-200 focus:ring-green-500 bg-green-50/30 transition-opacity ${
                     isScanning ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 />
@@ -185,7 +204,6 @@ export default function TransactionItemsTable({
                 }))}
                 searchPlaceholder={t("search_product") || "Search by name"}
                 onSearchChange={debouncedFetchProducts}
-                // ── Pagination ──────────────────────────────────────────────
                 onLoadMore={onLoadMoreProducts}
                 hasMore={productsHasMore}
                 isLoadingMore={isLoadingMoreProducts}
@@ -196,7 +214,14 @@ export default function TransactionItemsTable({
                       productId: prod.oid,
                       qrcode: "",
                       quantity: 1,
-                      unitCost: prod.price || 0,
+                      productPrice: prod.price || 0,
+                      discountPercentOne: prod.discountPercentSupplierOne || 0,
+                      discountPercentTwo: prod.discountPercentSupplierTwo || 0,
+                      unitCost: calculateUnitCost(
+                        prod.price || 0,
+                        prod.discountPercentSupplierOne || 0,
+                        prod.discountPercentSupplierTwo || 0,
+                      ),
                       batchNumber: "",
                       expiryDate: "",
                     });
@@ -215,6 +240,9 @@ export default function TransactionItemsTable({
                   productId: "",
                   qrcode: "",
                   quantity: 1,
+                  productPrice: 0,
+                  discountPercentOne: 0,
+                  discountPercentTwo: 0,
                   unitCost: 0,
                   batchNumber: "",
                   expiryDate: "",
@@ -242,6 +270,19 @@ export default function TransactionItemsTable({
               <th className="px-5 py-4 font-bold text-gray-600 border-b border-gray-100 w-32">
                 {t("quantity")}
               </th>
+              {showPricingDetails && (
+                <>
+                  <th className="px-5 py-4 font-bold text-gray-600 border-b border-gray-100 w-32">
+                    {t("product_price")}
+                  </th>
+                  <th className="px-5 py-4 font-bold text-gray-600 border-b border-gray-100 w-32">
+                    {t("discount_percent_one")}
+                  </th>
+                  <th className="px-5 py-4 font-bold text-gray-600 border-b border-gray-100 w-32">
+                    {t("discount_percent_two")}
+                  </th>
+                </>
+              )}
               <th className="px-5 py-4 font-bold text-gray-600 border-b border-gray-100 w-32">
                 {t("unit_cost")}
               </th>
@@ -264,11 +305,11 @@ export default function TransactionItemsTable({
                 products={products}
                 setProducts={setProducts}
                 debouncedFetchProducts={debouncedFetchProducts}
-                // ── Pagination ────────────────────────────────────────────
                 onLoadMoreProducts={onLoadMoreProducts}
                 productsHasMore={productsHasMore}
                 isLoadingMoreProducts={isLoadingMoreProducts}
                 isViewMode={isViewMode}
+                showPricingDetails={showPricingDetails}
               />
             ))}
           </tbody>

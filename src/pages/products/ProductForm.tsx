@@ -111,6 +111,8 @@ export default function ProductForm({
       countryOfOrigin: n(initialData.countryOfOrigin),
       minStockLevel: initialData.minStockLevel ?? 0,
       maxStockLevel: initialData.maxStockLevel ?? 0,
+      discountPercentSupplierOne: initialData.discountPercentSupplierOne ?? 0,
+      discountPercentSupplierTwo: initialData.discountPercentSupplierTwo ?? 0,
       isExportable: !!initialData.isExportable,
       isImportable: !!initialData.isImportable,
       drugStatus: n(initialData.drugStatus),

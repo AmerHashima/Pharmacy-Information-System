@@ -28,6 +28,8 @@
   "countryOfOrigin": "Country of Origin",
   "minStockLevel": "Min Stock Level",
   "maxStockLevel": "Max Stock Level",
+  "discountPercentSupplierOne": "Discount % Supplier 1",
+  "discountPercentSupplierTwo": "Discount % Supplier 2",
   "exportable": "Exportable Product",
   "importable": "Importable Product",
   "drugStatus": "Drug Status",

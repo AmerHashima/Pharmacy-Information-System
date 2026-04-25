@@ -50,6 +50,9 @@ export default function NewTransactionForm({
           productId: z.string().min(1, t("product_required")),
           qrcode: z.string().optional(),
           quantity: z.number().min(0.01, t("quantity_min")),
+          productPrice: z.number().min(0).optional(),
+          discountPercentOne: z.number().min(0).max(100).optional(),
+          discountPercentTwo: z.number().min(0).max(100).optional(),
           unitCost: z.number().min(0),
           batchNumber: z.string().min(1, t("batch_number_required")),
           expiryDate: z.string().min(1, t("expiry_date_required")),
@@ -186,6 +189,7 @@ export default function NewTransactionForm({
             onLoadMoreProducts={handleLoadMoreProducts}
             productsHasMore={productsHasMore}
             isLoadingMoreProducts={isLoadingMoreProducts}
+            showPricingDetails={true}
           />
 
           <div className="flex justify-end gap-3">

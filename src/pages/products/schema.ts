@@ -21,6 +21,8 @@ export const getProductSchema = (t: TFunction) =>
     countryOfOrigin: z.string().optional(),
     minStockLevel: z.coerce.number().optional(),
     maxStockLevel: z.coerce.number().optional(),
+    discountPercentSupplierOne: z.coerce.number().min(0).max(100).optional(),
+    discountPercentSupplierTwo: z.coerce.number().min(0).max(100).optional(),
     isExportable: z.boolean().default(false),
     isImportable: z.boolean().default(false),
     drugStatus: z.string().optional(),

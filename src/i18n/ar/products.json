@@ -28,6 +28,8 @@
   "countryOfOrigin": "بلد المنشأ",
   "minStockLevel": "الحد الأدنى للمخزون",
   "maxStockLevel": "الحد الأقصى للمخزون",
+  "discountPercentSupplierOne": "نسبة الخصم للمورد 1",
+  "discountPercentSupplierTwo": "نسبة الخصم للمورد 2",
   "exportable": "قابل للتصدير",
   "importable": "قابل للاستيراد",
   "drugStatus": "حالة الدواء",

@@ -1,6 +1,5 @@
 import { UseFormRegister } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Info } from "lucide-react";
 import Input from "@/components/ui/Input";
 import { ProductFormValues } from "../schema";
 import { positiveNumberInputProps } from "@/utils/positiveNumberInputProps";
@@ -17,7 +16,7 @@ export default function StockLevelsTab({
   const { t } = useTranslation("products");
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
       <Input
         {...register("minStockLevel")}
         label={t("minStockLevel")}
@@ -29,6 +28,24 @@ export default function StockLevelsTab({
         {...register("maxStockLevel")}
         label={t("maxStockLevel")}
         type="number"
+        disabled={isLoading}
+        {...positiveNumberInputProps}
+      />
+      <Input
+        {...register("discountPercentSupplierOne")}
+        label={t("discountPercentSupplierOne")}
+        type="number"
+        max={100}
+        step="0.01"
+        disabled={isLoading}
+        {...positiveNumberInputProps}
+      />
+      <Input
+        {...register("discountPercentSupplierTwo")}
+        label={t("discountPercentSupplierTwo")}
+        type="number"
+        max={100}
+        step="0.01"
         disabled={isLoading}
         {...positiveNumberInputProps}
       />
