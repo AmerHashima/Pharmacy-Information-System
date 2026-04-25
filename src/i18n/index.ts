@@ -18,6 +18,7 @@ import arLookups from "./ar/lookups.json";
 import arIntegrations from "./ar/integrations.json";
 import arRsd from "./ar/rsd.json";
 import arGenerics from "./ar/generics.json";
+import arRegister from "./ar/register.json";
 
 // ── English translations ───────────────────────────────────────────────────
 import enCommon from "./en/common.json";
@@ -35,6 +36,7 @@ import enLookups from "./en/lookups.json";
 import enIntegrations from "./en/integrations.json";
 import enRsd from "./en/rsd.json";
 import enGenerics from "./en/generics.json";
+import enRegister from "./en/register.json";
 
 export const LANGUAGES = [
   { code: "ar", label: "العربية", dir: "rtl" as const },
@@ -62,6 +64,7 @@ i18n
         integrations: arIntegrations,
         rsd: arRsd,
         generics: arGenerics,
+        register: arRegister,
       },
       en: {
         common: enCommon,
@@ -79,6 +82,7 @@ i18n
         integrations: enIntegrations,
         rsd: enRsd,
         generics: enGenerics,
+        register: enRegister,
       },
     },
     lng: undefined, // let detector decide first
@@ -100,6 +104,7 @@ i18n
       "integrations",
       "rsd",
       "generics",
+      "register",
     ],
 
     detection: {

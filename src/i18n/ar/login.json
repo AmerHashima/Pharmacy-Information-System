@@ -14,5 +14,7 @@
   "passwordTooLong": "كلمة المرور طويلة جداً",
   "invalidCredentials": "اسم المستخدم أو كلمة المرور غير صحيحة",
   "poweredBy": "powered By",
-  "company": "HealthTech Solutions"
+  "company": "HealthTech Solutions",
+  "noAccount": "ليس لديك حساب؟",
+  "signUp": "إنشاء حساب"
 }

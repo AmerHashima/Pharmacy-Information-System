@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/api/authService";
-import { LoginDto } from "@/types";
+import { LoginDto, RegisterDto } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 export function useAuth() {
@@ -27,5 +27,15 @@ export function useAuth() {
     navigate("/login");
   };
 
-  return { login, logout, user, isAuthenticated };
+  const register = async (dto: RegisterDto) => {
+    const { data } = await authService.register(dto);
+    if (data.success && data.data.token) {
+      setAuth(data.data.token, data.data.refreshToken!, data.data.user);
+      navigate("/");
+    } else {
+      throw new Error(data.message || "Registration failed");
+    }
+  };
+
+  return { login, logout, register, user, isAuthenticated };
 }
